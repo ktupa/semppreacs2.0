@@ -38,7 +38,7 @@ import shutil
 import logging
 from logging import Logger
 
-APP_TITLE = "Semppre Bridge"
+APP_TITLE = "AcsMan"
 APP_VERSION = "1.3.0"  # Sprint 3: Database
 
 # =========================

@@ -73,7 +73,7 @@ async def get_version():
     """Retorna versão atual do sistema"""
     return {
         "version": _get_current_version(),
-        "app_name": "SemPPRE Bridge",
+        "app_name": "AcsMan",
         "build_date": datetime.now().isoformat()
     }
 

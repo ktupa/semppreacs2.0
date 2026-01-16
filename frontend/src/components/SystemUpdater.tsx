@@ -17,7 +17,6 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
-  Divider,
   List,
   ListItem,
   ListIcon,

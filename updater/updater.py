@@ -35,7 +35,7 @@ VERSION_FILE = BASE_DIR / 'VERSION'
 
 
 class SemPPREUpdater:
-    """Sistema de atualização para instâncias cliente do SemPPRE Bridge"""
+    """Sistema de atualização para instâncias cliente do ACSMAN"""
     
     def __init__(self):
         self.config = self._load_config()
