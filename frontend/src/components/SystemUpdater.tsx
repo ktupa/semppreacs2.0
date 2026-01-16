@@ -117,9 +117,11 @@ export default function SystemUpdater() {
   const loadBackups = async () => {
     try {
       const response = await axios.get<BackupInfo[]>(`${API_BASE}/api/updates/backups`);
-      setBackups(response.data);
+      // Garante que é um array
+      setBackups(Array.isArray(response.data) ? response.data : []);
     } catch {
       console.error('Erro ao carregar backups');
+      setBackups([]);
     }
   };
 
