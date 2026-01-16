@@ -23,7 +23,20 @@ log_success() { echo -e "${GREEN}[✓]${NC} $1"; }
 log_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
 log_error() { echo -e "${RED}[✗]${NC} $1"; }
 
-INSTALL_DIR="/opt/semppre-bridge"
+# Detecta o diretório de instalação automaticamente
+# Prioridade: parâmetro > diretório atual > /opt/semppre-bridge > /opt/semppreacs2.0
+if [ -n "$1" ]; then
+    INSTALL_DIR="$1"
+elif [ -f "./app/main.py" ]; then
+    INSTALL_DIR="$(pwd)"
+elif [ -d "/opt/semppre-bridge" ]; then
+    INSTALL_DIR="/opt/semppre-bridge"
+elif [ -d "/opt/semppreacs2.0" ]; then
+    INSTALL_DIR="/opt/semppreacs2.0"
+else
+    # Tenta encontrar pelo processo
+    INSTALL_DIR=$(dirname $(dirname $(readlink -f /proc/$(pgrep -f "uvicorn app.main")/cwd 2>/dev/null)) 2>/dev/null || echo "")
+fi
 
 echo ""
 echo "╔════════════════════════════════════════════════════════════╗"
@@ -32,13 +45,19 @@ echo "╚═══════════════════════�
 echo ""
 
 # Verificar se o diretório existe
-if [ ! -d "$INSTALL_DIR" ]; then
-    log_error "Diretório $INSTALL_DIR não encontrado!"
-    log_info "Este script é para atualizar instalações existentes."
-    log_info "Para nova instalação, use: ./updater/client_setup.sh"
+if [ ! -d "$INSTALL_DIR" ] || [ -z "$INSTALL_DIR" ]; then
+    log_error "Diretório de instalação não encontrado!"
+    log_info "Diretórios verificados: /opt/semppre-bridge, /opt/semppreacs2.0"
+    log_info ""
+    log_info "Execute o script de dentro do diretório do ACS:"
+    log_info "  cd /opt/SEU_DIRETORIO && curl -sSL https://raw.githubusercontent.com/ktupa/semppreacs2.0/main/updater/bootstrap.sh | bash"
+    log_info ""
+    log_info "Ou passe o caminho como parâmetro:"
+    log_info "  curl -sSL https://raw.githubusercontent.com/ktupa/semppreacs2.0/main/updater/bootstrap.sh | bash -s /opt/semppreacs2.0"
     exit 1
 fi
 
+log_info "Diretório encontrado: $INSTALL_DIR"
 cd "$INSTALL_DIR"
 
 # Verificar se é um repositório git
