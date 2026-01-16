@@ -401,9 +401,9 @@ async def change_password(
 
 
 @router.get("/users", response_model=List[UserResponse])
-async def list_users(current_user: UserInDB = Depends(require_role(["admin"]))):
+async def list_users(current_user: UserInDB = Depends(get_current_user)):
     """
-    Lista todos os usuários (apenas admin).
+    Lista todos os usuários (qualquer usuário autenticado pode ver).
     """
     users = load_users()
     return [
@@ -593,9 +593,9 @@ async def reset_password(
 
 
 @router.get("/users/{username}", response_model=UserResponse)
-async def get_user(username: str, current_user: UserInDB = Depends(require_role(["admin"]))):
+async def get_user(username: str, current_user: UserInDB = Depends(get_current_user)):
     """
-    Obtém dados de um usuário específico (apenas admin).
+    Obtém dados de um usuário específico (qualquer usuário autenticado pode ver).
     """
     users = load_users()
     if username not in users:
