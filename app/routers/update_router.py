@@ -18,6 +18,7 @@ BASE_DIR = Path('/opt/semppre-bridge')
 UPDATER_SCRIPT = BASE_DIR / 'updater' / 'updater.py'
 VERSION_FILE = BASE_DIR / 'VERSION'
 CONFIG_FILE = BASE_DIR / 'updater' / 'config.json'
+PYTHON_PATH = BASE_DIR / 'venv' / 'bin' / 'python'
 
 
 class UpdateStatus(BaseModel):
@@ -40,32 +41,102 @@ class UpdateConfig(BaseModel):
     check_interval_hours: int = 24
 
 
-def _run_updater(command: str) -> dict:
-    """Executa comando do updater e retorna resultado"""
-    try:
-        result = subprocess.run(
-            ['python3', str(UPDATER_SCRIPT), command],
-            cwd=str(BASE_DIR),
-            capture_output=True,
-            text=True,
-            timeout=60
-        )
-        # Tenta parsear como JSON
-        try:
-            return json.loads(result.stdout)
-        except:
-            return {'output': result.stdout, 'error': result.stderr}
-    except subprocess.TimeoutExpired:
-        return {'error': 'Timeout ao executar comando'}
-    except Exception as e:
-        return {'error': str(e)}
-
-
 def _get_current_version() -> str:
     """Obtém versão atual do sistema"""
     if VERSION_FILE.exists():
         return VERSION_FILE.read_text().strip()
     return "unknown"
+
+
+def _compare_versions(v1: str, v2: str) -> int:
+    """Compara duas versões. Retorna: 1 se v1 > v2, -1 se v1 < v2, 0 se iguais"""
+    def normalize(v):
+        v = v.lstrip('v')
+        return [int(x) for x in v.split('.') if x.isdigit()]
+    
+    try:
+        n1, n2 = normalize(v1), normalize(v2)
+        for a, b in zip(n1, n2):
+            if a > b: return 1
+            if a < b: return -1
+        return len(n1) - len(n2)
+    except:
+        return 0
+
+
+def _check_git_updates() -> dict:
+    """Verifica atualizações via Git diretamente"""
+    current_version = _get_current_version()
+    
+    try:
+        # Fetch das atualizações
+        subprocess.run(
+            ['git', 'fetch', 'origin', '--tags'],
+            cwd=str(BASE_DIR),
+            capture_output=True,
+            timeout=30
+        )
+        
+        # Obtém última tag
+        result = subprocess.run(
+            ['git', 'describe', '--tags', '--abbrev=0', 'origin/main'],
+            cwd=str(BASE_DIR),
+            capture_output=True,
+            text=True,
+            timeout=10
+        )
+        
+        if result.returncode == 0 and result.stdout.strip():
+            latest_tag = result.stdout.strip()
+            
+            if _compare_versions(latest_tag, current_version) > 0:
+                # Obtém changelog
+                changelog_result = subprocess.run(
+                    ['git', 'log', '--oneline', f'{current_version}..{latest_tag}'],
+                    cwd=str(BASE_DIR),
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                changelog = changelog_result.stdout.strip().split('\n') if changelog_result.stdout.strip() else []
+                
+                return {
+                    'available': True,
+                    'current_version': current_version,
+                    'new_version': latest_tag,
+                    'changelog': changelog[:10],  # Limita a 10 entradas
+                    'type': 'release'
+                }
+        
+        return {
+            'available': False,
+            'current_version': current_version
+        }
+        
+    except Exception as e:
+        return {
+            'available': False,
+            'current_version': current_version,
+            'error': str(e)
+        }
+
+
+def _run_updater(command: str) -> dict:
+    """Executa comando do updater e retorna resultado"""
+    try:
+        python_exec = str(PYTHON_PATH) if PYTHON_PATH.exists() else 'python3'
+        result = subprocess.run(
+            [python_exec, str(UPDATER_SCRIPT), command],
+            cwd=str(BASE_DIR),
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+        return {'output': result.stdout, 'error': result.stderr if result.returncode != 0 else None}
+    except subprocess.TimeoutExpired:
+        return {'error': 'Timeout ao executar comando'}
+    except Exception as e:
+        return {'error': str(e)}
 
 
 @router.get("/version")
@@ -81,7 +152,7 @@ async def get_version():
 @router.get("/check", response_model=UpdateStatus)
 async def check_updates():
     """Verifica se há atualizações disponíveis"""
-    result = _run_updater('check')
+    result = _check_git_updates()
     
     return UpdateStatus(
         available=result.get('available', False),
@@ -133,17 +204,42 @@ async def list_backups():
 
 
 @router.post("/backup")
-async def create_backup():
-    """Cria um backup manual do sistema"""
-    result = _run_updater('backup')
+async def create_backup(background_tasks: BackgroundTasks):
+    """Cria um backup manual do sistema em background"""
+    import tarfile
+    from datetime import datetime
     
-    if 'error' in result:
-        raise HTTPException(status_code=500, detail=result['error'])
+    backup_dir = BASE_DIR / 'updater' / 'backups'
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    current_version = _get_current_version()
+    backup_name = f'backup_{current_version}_{timestamp}.tar.gz'
+    backup_path = backup_dir / backup_name
+    
+    def do_backup():
+        try:
+            with tarfile.open(backup_path, 'w:gz') as tar:
+                # Backup do código principal
+                for folder in ['app', 'frontend/src', 'frontend/public']:
+                    folder_path = BASE_DIR / folder
+                    if folder_path.exists():
+                        tar.add(folder_path, arcname=folder)
+                
+                # Backup de arquivos importantes
+                for file in ['requirements.txt', 'VERSION', 'CHANGELOG.md']:
+                    file_path = BASE_DIR / file
+                    if file_path.exists():
+                        tar.add(file_path, arcname=file)
+        except Exception as e:
+            print(f"Erro ao criar backup: {e}")
+    
+    background_tasks.add_task(do_backup)
     
     return {
-        "status": "success",
-        "message": "Backup criado com sucesso",
-        "output": result.get('output', '')
+        "status": "started",
+        "message": f"Backup {backup_name} sendo criado em background",
+        "backup_name": backup_name
     }
 
 
