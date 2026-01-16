@@ -711,12 +711,17 @@ if os.path.exists(FRONTEND_DIST) and os.path.isdir(FRONTEND_DIST):
         Serve o index.html para todas as rotas não-API.
         Isso permite que o React Router funcione corretamente em produção.
         """
-        # Se for uma rota API, não interceptar
-        if full_path.startswith(("api/", "api-genie/", "genie/", "ixc/", "diagnostico/", "config/", 
-                                "auth/", "backup/", "metrics/", "analytics/", "feeds/", 
-                                "webhooks/", "ml/", "provisioning/", "device-params/",
-                                "devices/", "api-tr069/", "tr069/", "users-management/",
-                                "__debug/", "health")):
+        # Se for uma rota API, não interceptar (retorna 404 para API routes não existentes)
+        # NOTA: "devices/" aqui se refere a rotas de API tipo /devices/{id}/tasks, NÃO a página do frontend
+        # As rotas do frontend como /devices/ABC123 são servidas pelo index.html
+        api_prefixes = (
+            "api/", "api-genie/", "genie/", "ixc/", "diagnostico/", "config/", 
+            "auth/", "backup/", "metrics/", "analytics/", "feeds/", 
+            "webhooks/", "ml/", "provisioning/", "device-params/",
+            "api-tr069/", "tr069/", "users-management/",
+            "__debug/", "health"
+        )
+        if full_path.startswith(api_prefixes):
             raise HTTPException(status_code=404, detail="Not Found")
         
         # Tentar servir arquivo estático se existir
