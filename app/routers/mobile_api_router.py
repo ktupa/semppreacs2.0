@@ -300,6 +300,7 @@ def extract_device_info(device: Dict[str, Any]) -> DeviceSearchResponse:
     # Temperatura (em Celsius) - múltiplos paths possíveis
     temperature = None
     temp_value = get_value(device,
+        'Device.X_ZYXEL_GPON.ONU.temperature',  # Zyxel GPON
         'Device.DeviceInfo.TemperatureStatus.TemperatureSensor.1.Value',
         'Device.DeviceInfo.X_TP_Temperature',
         'InternetGatewayDevice.DeviceInfo.X_TP_Temperature',
@@ -314,51 +315,60 @@ def extract_device_info(device: Dict[str, Any]) -> DeviceSearchResponse:
     # Sinal Óptico (GPON/EPON)
     optical_signal = None
     
-    # TR-181: Device.Optical.Interface.1
+    # Buscar RX Power - múltiplos paths por fabricante
     rx_power = get_value(device,
-        'Device.Optical.Interface.1.OpticalSignalLevel',
-        'Device.X_ZYXEL_GPON.PM.attrData',  # Zyxel
-        'InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.RXPower'  # Alguns TR-098
+        'Device.X_ZYXEL_GPON.ONU.rxPower',  # Zyxel GPON (string "-16.72")
+        'Device.Optical.Interface.1.OpticalSignalLevel',  # TR-181 padrão
+        'InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.RXPower',  # TR-098
+        'InternetGatewayDevice.WANDevice.1.WANDSLInterfaceConfig.X_BROADCOM_COM_RXPower'  # Broadcom
     )
+    
+    # Buscar TX Power
     tx_power = get_value(device,
-        'Device.Optical.Interface.1.TransmitOpticalLevel',
-        'InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.TXPower'
+        'Device.X_ZYXEL_GPON.ONU.txPower',  # Zyxel GPON (string "2.39")
+        'Device.Optical.Interface.1.TransmitOpticalLevel',  # TR-181 padrão
+        'InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.TXPower'  # TR-098
     )
+    
+    # Status da conexão óptica
     optical_status = get_value(device,
         'Device.Optical.Interface.1.Status',
         'Device.X_ZYXEL_GPON.Xpon.phyStatus',
         'InternetGatewayDevice.WANDevice.1.X_GponInterfaceConfig.Status'
     )
     
-    # Converter valores de sinal (geralmente vêm em 0.001 dBm ou mW)
-    if rx_power is not None or tx_power is not None or optical_status is not None:
+    # Converter valores de sinal para float
+    rx_dbm = None
+    tx_dbm = None
+    
+    if rx_power is not None:
         try:
-            rx_dbm = None
-            tx_dbm = None
-            
-            if rx_power is not None and rx_power != 0:
-                # Alguns dispositivos retornam em 0.001 dBm
-                rx_val = float(rx_power)
-                if rx_val > 1000 or rx_val < -1000:
-                    rx_dbm = rx_val / 1000.0  # Converter de 0.001 dBm
-                else:
-                    rx_dbm = rx_val
-            
-            if tx_power is not None and tx_power != 0:
-                tx_val = float(tx_power)
-                if tx_val > 1000 or tx_val < -1000:
-                    tx_dbm = tx_val / 1000.0
-                else:
-                    tx_dbm = tx_val
-            
-            optical_signal = OpticalSignal(
-                rx_power=rx_dbm,
-                tx_power=tx_dbm,
-                status=str(optical_status) if optical_status else None
-            )
-        except (ValueError, TypeError) as e:
-            log.warning(f"[Mobile API] Erro ao processar sinal óptico: {e}")
-            optical_signal = None
+            rx_val = float(rx_power)
+            # Alguns dispositivos retornam em 0.001 dBm (valores > 1000 ou < -1000)
+            if rx_val > 100 or rx_val < -100:
+                rx_dbm = rx_val / 1000.0
+            else:
+                rx_dbm = rx_val
+        except (ValueError, TypeError):
+            pass
+    
+    if tx_power is not None:
+        try:
+            tx_val = float(tx_power)
+            if tx_val > 100 or tx_val < -100:
+                tx_dbm = tx_val / 1000.0
+            else:
+                tx_dbm = tx_val
+        except (ValueError, TypeError):
+            pass
+    
+    # Montar objeto OpticalSignal se houver dados
+    if rx_dbm is not None or tx_dbm is not None or optical_status is not None:
+        optical_signal = OpticalSignal(
+            rx_power=rx_dbm,
+            tx_power=tx_dbm,
+            status=str(optical_status) if optical_status else None
+        )
     
     # WiFi - Detectar índices corretos para TR-181
     wifi_2g = None
