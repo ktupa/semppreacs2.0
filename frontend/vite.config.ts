@@ -140,6 +140,14 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/devices/, "/devices"),
       },
 
+      // FastAPI Device Parameters - rota direta
+      // Usado pelo deviceApi() em apiConfig.ts
+      "/devices": {
+        target: "http://127.0.0.1:8087",
+        changeOrigin: true,
+        secure: false,
+      },
+
       // FastAPI Provisioning (auto-config)
       "/provisioning": {
         target: "http://127.0.0.1:8087",

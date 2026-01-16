@@ -760,6 +760,8 @@ export default function DispositivoDashboard() {
     return (Date.now() - new Date(lastInform).getTime()) / 60000 < 10;
   }, [lastInform]);
 
+  // CPU e Memória - verifica se estão disponíveis
+  const hasCpuData = cpuUsage > 0 || (memTotal > 0 && memFree > 0);
   const memUsagePercent = memTotal > 0 ? Math.round(((memTotal - memFree) / memTotal) * 100) : 0;
 
   const ident = useMemo(() => {
@@ -1055,15 +1057,15 @@ export default function DispositivoDashboard() {
           />
           <StatCard
             label="CPU"
-            value={`${cpuUsage}%`}
+            value={hasCpuData ? `${cpuUsage}%` : "N/D"}
             icon={<FiCpu />}
-            color={cpuUsage > 80 ? "red" : cpuUsage > 50 ? "yellow" : "green"}
+            color={hasCpuData ? (cpuUsage > 80 ? "red" : cpuUsage > 50 ? "yellow" : "green") : "gray"}
           />
           <StatCard
             label="Memória"
-            value={`${memUsagePercent}%`}
+            value={hasCpuData ? `${memUsagePercent}%` : "N/D"}
             icon={<FiHardDrive />}
-            color={memUsagePercent > 80 ? "red" : memUsagePercent > 50 ? "yellow" : "green"}
+            color={hasCpuData ? (memUsagePercent > 80 ? "red" : memUsagePercent > 50 ? "yellow" : "green") : "gray"}
             helpText={memTotal > 0 ? `${formatBytes(memFree)} livre` : undefined}
           />
           <StatCard
@@ -1147,30 +1149,40 @@ export default function DispositivoDashboard() {
                       <Text fontSize="xs" color="whiteAlpha.500" fontWeight="bold" textTransform="uppercase">
                         Uso de Recursos
                       </Text>
-                      <Box>
-                        <HStack justify="space-between" mb={1}>
-                          <Text fontSize="sm" color="gray.400">CPU</Text>
-                          <Text fontSize="sm" color="white">{cpuUsage}%</Text>
-                        </HStack>
-                        <Progress 
-                          value={cpuUsage} 
-                          size="sm" 
-                          colorScheme={cpuUsage > 80 ? "red" : cpuUsage > 50 ? "yellow" : "green"} 
-                          borderRadius="full"
-                        />
-                      </Box>
-                      <Box>
-                        <HStack justify="space-between" mb={1}>
-                          <Text fontSize="sm" color="gray.400">Memória</Text>
-                          <Text fontSize="sm" color="white">{memUsagePercent}%</Text>
-                        </HStack>
-                        <Progress 
-                          value={memUsagePercent} 
-                          size="sm" 
-                          colorScheme={memUsagePercent > 80 ? "red" : memUsagePercent > 50 ? "yellow" : "green"} 
-                          borderRadius="full"
-                        />
-                      </Box>
+                      {hasCpuData ? (
+                        <>
+                          <Box>
+                            <HStack justify="space-between" mb={1}>
+                              <Text fontSize="sm" color="gray.400">CPU</Text>
+                              <Text fontSize="sm" color="white">{cpuUsage}%</Text>
+                            </HStack>
+                            <Progress 
+                              value={cpuUsage} 
+                              size="sm" 
+                              colorScheme={cpuUsage > 80 ? "red" : cpuUsage > 50 ? "yellow" : "green"} 
+                              borderRadius="full"
+                            />
+                          </Box>
+                          <Box>
+                            <HStack justify="space-between" mb={1}>
+                              <Text fontSize="sm" color="gray.400">Memória</Text>
+                              <Text fontSize="sm" color="white">{memUsagePercent}%</Text>
+                            </HStack>
+                            <Progress 
+                              value={memUsagePercent} 
+                              size="sm" 
+                              colorScheme={memUsagePercent > 80 ? "red" : memUsagePercent > 50 ? "yellow" : "green"} 
+                              borderRadius="full"
+                            />
+                          </Box>
+                        </>
+                      ) : (
+                        <Box py={2} px={3} bg="whiteAlpha.50" rounded="md">
+                          <Text fontSize="sm" color="gray.500" textAlign="center">
+                            Dados não disponíveis para este dispositivo
+                          </Text>
+                        </Box>
+                      )}
                     </VStack>
                   )}
                 </InfoCard>

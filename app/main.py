@@ -417,47 +417,6 @@ app.include_router(mobile_api_router)
 app.include_router(update_router)
 
 # =========================
-# SERVIR FRONTEND (SPA)
-# =========================
-# Serve arquivos estáticos do frontend buildado (se existir)
-FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
-
-if os.path.exists(FRONTEND_DIST) and os.path.isdir(FRONTEND_DIST):
-    log.info(f"📦 Servindo frontend estático de: {FRONTEND_DIST}")
-    
-    # Servir assets estáticos (JS, CSS, imagens, etc)
-    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="assets")
-    
-    # Catch-all para SPA - deve vir por ÚLTIMO
-    @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
-        """
-        Serve o index.html para todas as rotas não-API.
-        Isso permite que o React Router funcione corretamente em produção.
-        """
-        # Se for uma rota API, não interceptar
-        if full_path.startswith(("api/", "genie/", "ixc/", "diagnostico/", "config/", 
-                                "auth/", "backup/", "metrics/", "analytics/", "feeds/", 
-                                "webhooks/", "ml/", "provisioning/", "device-params/",
-                                "__debug/", "health")):
-            raise HTTPException(status_code=404, detail="Not Found")
-        
-        # Tentar servir arquivo estático se existir
-        file_path = os.path.join(FRONTEND_DIST, full_path)
-        if os.path.isfile(file_path):
-            return FileResponse(file_path)
-        
-        # Caso contrário, servir index.html (SPA routing)
-        index_path = os.path.join(FRONTEND_DIST, "index.html")
-        if os.path.isfile(index_path):
-            return FileResponse(index_path)
-        
-        raise HTTPException(status_code=404, detail="Frontend não encontrado")
-else:
-    log.warning(f"⚠️ Frontend dist não encontrado em: {FRONTEND_DIST}")
-    log.warning("⚠️ Execute 'cd frontend && npm run build' para gerar o build de produção")
-
-# =========================
 # INICIALIZAÇÃO DO BANCO
 # =========================
 @app.on_event("startup")
@@ -532,7 +491,7 @@ async def diag_whois(host: str = Query(..., description="Domínio ou IP")):
 @app.get("/diagnostico/dns/resolve")
 async def diag_dns_resolve(
     name: str = Query(..., description="Nome DNS"),
-    type: str = Query("A", regex="^(A|AAAA|CNAME|MX|TXT|NS)$")
+    type: str = Query("A", pattern="^(A|AAAA|CNAME|MX|TXT|NS)$")
 ):
     bin_dig = shutil.which("dig")
     if bin_dig:
@@ -633,6 +592,49 @@ async def diag_iperf_client(payload: Dict[str, Optional[str | int]] = Body(...))
         return {"target": target, "seconds": seconds, "mbps": round(mbps, 3), "raw": None}
     except Exception:
         return {"target": target, "seconds": seconds, "mbps": None, "raw": out}
+
+# =========================
+# SERVIR FRONTEND (SPA)
+# =========================
+# Serve arquivos estáticos do frontend buildado (se existir)
+# IMPORTANTE: Esta seção deve vir POR ÚLTIMO, após todas as rotas de API
+FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+
+if os.path.exists(FRONTEND_DIST) and os.path.isdir(FRONTEND_DIST):
+    log.info(f"📦 Servindo frontend estático de: {FRONTEND_DIST}")
+    
+    # Servir assets estáticos (JS, CSS, imagens, etc)
+    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="assets")
+    
+    # Catch-all para SPA - deve vir por ÚLTIMO
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """
+        Serve o index.html para todas as rotas não-API.
+        Isso permite que o React Router funcione corretamente em produção.
+        """
+        # Se for uma rota API, não interceptar
+        if full_path.startswith(("api/", "genie/", "ixc/", "diagnostico/", "config/", 
+                                "auth/", "backup/", "metrics/", "analytics/", "feeds/", 
+                                "webhooks/", "ml/", "provisioning/", "device-params/",
+                                "devices/", "api-tr069/", "tr069/",
+                                "__debug/", "health")):
+            raise HTTPException(status_code=404, detail="Not Found")
+        
+        # Tentar servir arquivo estático se existir
+        file_path = os.path.join(FRONTEND_DIST, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        
+        # Caso contrário, servir index.html (SPA routing)
+        index_path = os.path.join(FRONTEND_DIST, "index.html")
+        if os.path.isfile(index_path):
+            return FileResponse(index_path)
+        
+        raise HTTPException(status_code=404, detail="Frontend não encontrado")
+else:
+    log.warning(f"⚠️ Frontend dist não encontrado em: {FRONTEND_DIST}")
+    log.warning("⚠️ Execute 'cd frontend && npm run build' para gerar o build de produção")
 
 # =========================
 # RUN (uvicorn)

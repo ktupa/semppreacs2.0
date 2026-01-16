@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { Box, HStack, Text, Badge, Select, useToast } from "@chakra-ui/react";
+import { Box, HStack, Text, Badge, Select, useToast, Input, InputGroup, InputRightElement, IconButton } from "@chakra-ui/react";
+import { FiPlus } from "react-icons/fi";
 import Chart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { pingCustom as apiPingHost } from "../services/genieAcsApi";
@@ -15,8 +16,20 @@ export default function PingChart({ host, fallbackHosts = ["8.8.8.8"], intervalM
   const [data, setData] = useState<number[]>([]);
   const [labels, setLabels] = useState<string[]>([]);
   const [target, setTarget] = useState<string>(host || fallbackHosts[0] || "");
+  const [customHosts, setCustomHosts] = useState<string[]>([]);
+  const [newHost, setNewHost] = useState<string>("");
   const timer = useRef<number | null>(null);
   const toast = useToast();
+
+  const addCustomHost = () => {
+    const ip = newHost.trim();
+    if (ip && !customHosts.includes(ip) && !fallbackHosts.includes(ip)) {
+      setCustomHosts(prev => [...prev, ip]);
+      setTarget(ip);
+      setNewHost("");
+      toast({ title: "IP adicionado", status: "success", duration: 2000 });
+    }
+  };
 
   const pingOnce = async () => {
     try {
@@ -56,17 +69,49 @@ export default function PingChart({ host, fallbackHosts = ["8.8.8.8"], intervalM
     tooltip: { y: { formatter: (v)=> Number.isFinite(v)? `${v} ms` : "—" } }
   };
 
+  const allHosts = [...new Set([target, ...fallbackHosts, ...customHosts].filter(Boolean))];
+
   return (
     <Box bg="gray.800" p={4} borderRadius="lg" border="1px solid" borderColor="gray.700">
-      <HStack mb={3} justify="space-between">
+      <HStack mb={3} justify="space-between" flexWrap="wrap" gap={2}>
         <HStack>
-          <Text fontWeight="bold" color="white">{title}</Text>
-          <Badge colorScheme="purple">{target}</Badge>
+          <Text fontWeight="bold" color="cyan.300">{title}</Text>
+          <Badge colorScheme="cyan" fontSize="sm">{target}</Badge>
         </HStack>
-        <Select size="sm" maxW="220px" value={target}
-          onChange={(e)=> setTarget(e.target.value)}>
-          {[target, ...fallbackHosts].filter((v,i,a)=>v && a.indexOf(v)===i).map(h => <option key={h} value={h}>{h}</option>)}
-        </Select>
+        <HStack spacing={2}>
+          <InputGroup size="sm" maxW="160px">
+            <Input 
+              placeholder="IP customizado" 
+              value={newHost}
+              onChange={(e) => setNewHost(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addCustomHost()}
+              bg="gray.700"
+              border="none"
+              color="white"
+              _placeholder={{ color: "gray.500" }}
+            />
+            <InputRightElement>
+              <IconButton 
+                aria-label="Adicionar IP" 
+                icon={<FiPlus />} 
+                size="xs" 
+                colorScheme="cyan"
+                onClick={addCustomHost}
+              />
+            </InputRightElement>
+          </InputGroup>
+          <Select 
+            size="sm" 
+            maxW="180px" 
+            value={target}
+            onChange={(e) => setTarget(e.target.value)}
+            bg="gray.700"
+            border="none"
+            color="white"
+          >
+            {allHosts.map(h => <option key={h} value={h} style={{background: '#2D3748'}}>{h}</option>)}
+          </Select>
+        </HStack>
       </HStack>
       <Chart type="line" height={220} options={options} series={[{ name:"Ping", data: data as any }]} />
     </Box>

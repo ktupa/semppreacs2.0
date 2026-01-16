@@ -283,22 +283,36 @@ async def get_update_config():
 @router.put("/config")
 async def update_config(config: UpdateConfig):
     """Atualiza configuração do updater"""
-    if CONFIG_FILE.exists():
-        with open(CONFIG_FILE) as f:
-            current_config = json.load(f)
-    else:
-        current_config = {}
-    
-    if 'version' not in current_config:
-        current_config['version'] = {}
-    
-    current_config['version']['auto_update'] = config.auto_update
-    current_config['version']['check_interval_hours'] = config.check_interval_hours
-    
-    with open(CONFIG_FILE, 'w') as f:
-        json.dump(current_config, f, indent=2)
-    
-    return {"status": "success", "config": config}
+    try:
+        # Cria o diretório se não existir
+        CONFIG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        
+        if CONFIG_FILE.exists():
+            with open(CONFIG_FILE) as f:
+                current_config = json.load(f)
+        else:
+            current_config = {
+                "update_server": {
+                    "type": "git",
+                    "repository": "https://github.com/ktupa/semppreacs2.0.git",
+                    "branch": "main"
+                },
+                "version": {},
+                "protected_files": [".env", "data/users.json"]
+            }
+        
+        if 'version' not in current_config:
+            current_config['version'] = {}
+        
+        current_config['version']['auto_update'] = config.auto_update
+        current_config['version']['check_interval_hours'] = config.check_interval_hours
+        
+        with open(CONFIG_FILE, 'w') as f:
+            json.dump(current_config, f, indent=2)
+        
+        return {"status": "success", "config": config}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao salvar configuração: {str(e)}")
 
 
 @router.get("/changelog")
