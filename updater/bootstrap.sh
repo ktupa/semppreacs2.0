@@ -269,11 +269,26 @@ done
 log_info "Reiniciando serviço..."
 
 # Tentar diferentes nomes de serviço
+SERVICE_RESTARTED=false
 for service_name in semppre-bridge semppreacs semppreacs2 genieacs-bridge; do
     if systemctl is-enabled "$service_name" &>/dev/null; then
-        systemctl restart "$service_name" 2>/dev/null && log_success "Serviço $service_name reiniciado" && break
+        # Tentar com e sem sudo
+        if systemctl restart "$service_name" 2>/dev/null; then
+            log_success "Serviço $service_name reiniciado"
+            SERVICE_RESTARTED=true
+            break
+        elif sudo systemctl restart "$service_name" 2>/dev/null; then
+            log_success "Serviço $service_name reiniciado (via sudo)"
+            SERVICE_RESTARTED=true
+            break
+        fi
     fi
 done
+
+if [ "$SERVICE_RESTARTED" = false ]; then
+    log_warning "Não foi possível reiniciar o serviço automaticamente"
+    log_warning "Execute manualmente: sudo systemctl restart semppre-bridge"
+fi
 
 # Versão final
 NEW_VERSION=$(cat VERSION 2>/dev/null || echo "desconhecida")
