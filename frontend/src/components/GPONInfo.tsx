@@ -298,14 +298,14 @@ export function GPONInfo({ device }: GPONInfoProps) {
       {/* Parâmetros Físicos */}
       {temperature !== '—' && (
         <Box>
-          <Text color="teal.400" fontSize="sm" fontWeight="bold" mb={3} textTransform="uppercase">
+          <Text color="cyan.400" fontSize="sm" fontWeight="bold" mb={3} textTransform="uppercase">
             🌡️ Parâmetros Físicos
           </Text>
           <Grid templateColumns={{base: '1fr', md: 'repeat(4, 1fr)'}} gap={3}>
-            <Box bg="teal.900" p={3} borderRadius="md" textAlign="center">
-              <Text color="teal.200" fontSize="xs">Temperatura</Text>
+            <Box bg="cyan.900" p={3} borderRadius="md" textAlign="center">
+              <Text color="cyan.200" fontSize="xs">Temperatura</Text>
               <Text color="white" fontWeight="bold">{temperatureC}°C</Text>
-              <Text color="teal.400" fontSize="xs" fontFamily="mono">({temperature})</Text>
+              <Text color="cyan.400" fontSize="xs" fontFamily="mono">({temperature})</Text>
             </Box>
             <Box bg="yellow.900" p={3} borderRadius="md" textAlign="center">
               <Text color="yellow.200" fontSize="xs">Voltagem</Text>

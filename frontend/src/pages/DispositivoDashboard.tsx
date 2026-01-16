@@ -1293,8 +1293,8 @@ export default function DispositivoDashboard() {
                         <Text color="orange.200" fontSize="xs" fontWeight="semibold">Padrão</Text>
                         <Text color="white" fontWeight="bold">{standard24}</Text>
                       </Box>
-                      <Box bg="teal.800" p={2} rounded="md">
-                        <Text color="teal.200" fontSize="xs" fontWeight="semibold">Segurança</Text>
+                      <Box bg="cyan.800" p={2} rounded="md">
+                        <Text color="cyan.200" fontSize="xs" fontWeight="semibold">Segurança</Text>
                         <Text color="white" fontWeight="bold">{security24}</Text>
                       </Box>
                     </SimpleGrid>
@@ -1349,8 +1349,8 @@ export default function DispositivoDashboard() {
                         <Text color="orange.200" fontSize="xs" fontWeight="semibold">Padrão</Text>
                         <Text color="white" fontWeight="bold">{standard5}</Text>
                       </Box>
-                      <Box bg="teal.800" p={2} rounded="md">
-                        <Text color="teal.200" fontSize="xs" fontWeight="semibold">Segurança</Text>
+                      <Box bg="cyan.800" p={2} rounded="md">
+                        <Text color="cyan.200" fontSize="xs" fontWeight="semibold">Segurança</Text>
                         <Text color="white" fontWeight="bold">{security5}</Text>
                       </Box>
                     </SimpleGrid>
@@ -1398,8 +1398,8 @@ export default function DispositivoDashboard() {
                   >
                     <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                       <VStack spacing={2} align="stretch">
-                        <Box py={3} px={3} bg="teal.900" rounded="md" border="2px solid" borderColor="teal.600">
-                          <Text color="teal.200" fontSize="xs" fontWeight="semibold">Endereço IPv6</Text>
+                        <Box py={3} px={3} bg="cyan.900" rounded="md" border="2px solid" borderColor="cyan.600">
+                          <Text color="cyan.200" fontSize="xs" fontWeight="semibold">Endereço IPv6</Text>
                           <HStack mt={1}>
                             <Text color="white" fontSize="sm" fontFamily="mono" fontWeight="bold">{ipv6Address || "—"}</Text>
                             {ipv6Address && (
@@ -1522,7 +1522,7 @@ export default function DispositivoDashboard() {
                   {(ipv6Enabled || ipv6Address) && (
                     <>
                       <Divider my={4} borderColor="whiteAlpha.200" />
-                      <Text fontSize="xs" color="teal.400" fontWeight="bold" textTransform="uppercase" mb={2}>
+                      <Text fontSize="xs" color="cyan.400" fontWeight="bold" textTransform="uppercase" mb={2}>
                         IPv6
                       </Text>
                       <VStack spacing={2} align="stretch">
@@ -1535,7 +1535,7 @@ export default function DispositivoDashboard() {
                         {ipv6Address && (
                           <HStack justify="space-between" py={2} px={3} bg="whiteAlpha.50" rounded="md">
                             <Text color="gray.400" fontSize="sm">Endereço IPv6</Text>
-                            <Text color="teal.300" fontFamily="mono" fontSize="xs">{ipv6Address}</Text>
+                            <Text color="cyan.300" fontFamily="mono" fontSize="xs">{ipv6Address}</Text>
                           </HStack>
                         )}
                         {ipv6Gateway && (
@@ -1709,8 +1709,8 @@ export default function DispositivoDashboard() {
                         </Box>
                       )}
                       {lanRemoteGw && (
-                        <Box bg="teal.900" p={3} rounded="md" border="1px solid" borderColor="teal.600">
-                          <Text color="teal.200" fontSize="xs" fontWeight="semibold">Gateway Remoto</Text>
+                        <Box bg="cyan.900" p={3} rounded="md" border="1px solid" borderColor="cyan.600">
+                          <Text color="cyan.200" fontSize="xs" fontWeight="semibold">Gateway Remoto</Text>
                           <Text color="white" fontWeight="bold" fontFamily="mono">{lanRemoteGw}</Text>
                         </Box>
                       )}

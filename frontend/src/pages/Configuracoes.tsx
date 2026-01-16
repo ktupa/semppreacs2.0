@@ -268,71 +268,80 @@ export default function Configuracoes() {
 
   return (
     <Box p={6} bg="gray.900" minH="100vh" color="white">
-      <HStack mb={6}>
-        <Icon as={FaCog} boxSize={6} color="cyan.400" />
-        <Text fontSize="2xl" fontWeight="bold">Configurações do Sistema</Text>
-        <Button size="sm" variant="ghost" leftIcon={<FaSync />} onClick={loadData} ml="auto">
+      <HStack mb={6} spacing={4}>
+        <Box p={3} bg="cyan.500" borderRadius="xl">
+          <Icon as={FaCog} boxSize={6} color="white" />
+        </Box>
+        <VStack align="start" spacing={0}>
+          <Text fontSize="2xl" fontWeight="bold">Configurações do Sistema</Text>
+          <Text color="cyan.200" fontSize="sm">Gerencie as configurações do ACS</Text>
+        </VStack>
+        <Button size="sm" variant="outline" colorScheme="cyan" leftIcon={<FaSync />} onClick={loadData} ml="auto">
           Atualizar
         </Button>
       </HStack>
 
       <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4} mb={6}>
-        <Stat bg="gray.800" p={4} borderRadius="xl">
-          <StatLabel color="gray.400">Dispositivos</StatLabel>
-          <StatNumber>{stats.total_devices}</StatNumber>
-          <StatHelpText color="green.400">{stats.online_devices} online</StatHelpText>
+        <Stat bg="linear-gradient(135deg, #1a365d 0%, #2a4365 100%)" p={4} borderRadius="xl" border="1px solid" borderColor="blue.600">
+          <StatLabel color="blue.100" fontWeight="semibold">Dispositivos</StatLabel>
+          <StatNumber color="white">{stats.total_devices}</StatNumber>
+          <StatHelpText color="green.300">{stats.online_devices} online</StatHelpText>
         </Stat>
-        <Stat bg="gray.800" p={4} borderRadius="xl">
-          <StatLabel color="gray.400">Auto-Inform</StatLabel>
+        <Stat bg="linear-gradient(135deg, #1c4532 0%, #22543d 100%)" p={4} borderRadius="xl" border="1px solid" borderColor="green.500">
+          <StatLabel color="green.100" fontWeight="semibold">Auto-Inform</StatLabel>
           <StatNumber>
-            <Badge colorScheme={informStatus.enabled ? "green" : "gray"} fontSize="md">
+            <Badge colorScheme={informStatus.enabled ? "green" : "gray"} fontSize="md" px={3} py={1}>
               {informStatus.enabled ? "Ativo" : "Inativo"}
             </Badge>
           </StatNumber>
-          <StatHelpText>
+          <StatHelpText color="gray.300">
             {informStatus.enabled ? `A cada ${informStatus.interval_minutes} min` : "Desativado"}
           </StatHelpText>
         </Stat>
-        <Stat bg="gray.800" p={4} borderRadius="xl">
-          <StatLabel color="gray.400">Último Inform</StatLabel>
-          <StatNumber fontSize="sm">{formatDate(informStatus.last_run)}</StatNumber>
+        <Stat bg="linear-gradient(135deg, #44337a 0%, #553c9a 100%)" p={4} borderRadius="xl" border="1px solid" borderColor="purple.500">
+          <StatLabel color="purple.100" fontWeight="semibold">Último Inform</StatLabel>
+          <StatNumber fontSize="sm" color="white">{formatDate(informStatus.last_run)}</StatNumber>
         </Stat>
-        <Stat bg="gray.800" p={4} borderRadius="xl">
-          <StatLabel color="gray.400">Próximo Inform</StatLabel>
-          <StatNumber fontSize="sm">{informStatus.enabled ? formatDate(informStatus.next_run) : "—"}</StatNumber>
+        <Stat bg="linear-gradient(135deg, #0c4a6e 0%, #075985 100%)" p={4} borderRadius="xl" border="1px solid" borderColor="cyan.600">
+          <StatLabel color="cyan.100" fontWeight="semibold">Próximo Inform</StatLabel>
+          <StatNumber fontSize="sm" color="white">{informStatus.enabled ? formatDate(informStatus.next_run) : "—"}</StatNumber>
         </Stat>
       </SimpleGrid>
 
-      <Tabs variant="enclosed" colorScheme="cyan">
-        <TabList bg="gray.800" borderRadius="lg" p={1}>
-          <Tab _selected={{ bg: "cyan.600" }}>⚙️ Geral</Tab>
-          <Tab _selected={{ bg: "cyan.600" }}>📡 Inform Automático</Tab>
-          <Tab _selected={{ bg: "cyan.600" }}>📊 Métricas</Tab>
-          <Tab _selected={{ bg: "cyan.600" }}>🔐 Segurança</Tab>
-          <Tab _selected={{ bg: "cyan.600" }}>🔄 Sistema</Tab>
+      <Tabs variant="soft-rounded" colorScheme="cyan">
+        <TabList bg="gray.800" borderRadius="xl" p={2} border="1px solid" borderColor="gray.700" flexWrap="wrap">
+          <Tab _selected={{ bg: "cyan.500", color: "white" }} color="gray.300" fontWeight="semibold">⚙️ Geral</Tab>
+          <Tab _selected={{ bg: "cyan.500", color: "white" }} color="gray.300" fontWeight="semibold">📡 Inform Automático</Tab>
+          <Tab _selected={{ bg: "cyan.500", color: "white" }} color="gray.300" fontWeight="semibold">📊 Métricas</Tab>
+          <Tab _selected={{ bg: "cyan.500", color: "white" }} color="gray.300" fontWeight="semibold">🔐 Segurança</Tab>
+          <Tab _selected={{ bg: "cyan.500", color: "white" }} color="gray.300" fontWeight="semibold">🔄 Sistema</Tab>
         </TabList>
 
         <TabPanels>
           <TabPanel>
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
-              <Box bg="gray.800" p={6} borderRadius="xl">
-                <Text fontWeight="bold" mb={4}><Icon as={FaServer} mr={2} />Servidor ACS</Text>
+              <Box bg="gray.800" p={6} borderRadius="xl" border="1px solid" borderColor="gray.600">
+                <Text fontWeight="bold" mb={4} color="white"><Icon as={FaServer} mr={2} color="cyan.400" />Servidor ACS</Text>
                 <VStack spacing={4}>
                   <FormControl>
-                    <FormLabel>URL do GenieACS NBI</FormLabel>
+                    <FormLabel color="cyan.200" fontWeight="semibold">URL do GenieACS NBI</FormLabel>
                     <Input
                       value={localConfig.acs_url}
                       onChange={(e) => updateLocalConfig("acs_url", e.target.value)}
                       placeholder="http://localhost:7557"
                       bg="gray.700"
-                      border="none"
+                      border="2px solid"
+                      borderColor="gray.600"
+                      color="white"
+                      _hover={{ borderColor: "cyan.500" }}
+                      _focus={{ borderColor: "cyan.400", boxShadow: "0 0 0 1px #00B5D8" }}
                     />
-                    <FormHelperText color="gray.500">Endereço do servidor GenieACS NBI</FormHelperText>
+                    <FormHelperText color="gray.400">Endereço do servidor GenieACS NBI</FormHelperText>
                   </FormControl>
                 </VStack>
               </Box>
-              <Box bg="gray.800" p={6} borderRadius="xl">
-                <Text fontWeight="bold" mb={4}><Icon as={FaSync} mr={2} />Auto-Refresh Dashboard</Text>
+              <Box bg="gray.800" p={6} borderRadius="xl" border="1px solid" borderColor="gray.600">
+                <Text fontWeight="bold" mb={4} color="white"><Icon as={FaSync} mr={2} color="cyan.400" />Auto-Refresh Dashboard</Text>
                 <VStack spacing={4}>
                   <FormControl display="flex" alignItems="center">
                     <FormLabel mb="0">Atualização automática</FormLabel>

@@ -521,7 +521,7 @@ export default function WifiConfig({ device, onApplied }: WifiConfigProps) {
         <FormControl>
           <FormLabel color="white">Poder de Transmissão: {st.txPower}%</FormLabel>
           <Slider min={0} max={100} step={10} value={st.txPower} onChange={(v)=> setWifi(p=> ({...p,[r.idx]:{...p[r.idx],txPower:v}}))}>
-            <SliderTrack bg="gray.600"><SliderFilledTrack bg="teal.400"/></SliderTrack>
+            <SliderTrack bg="gray.600"><SliderFilledTrack bg="cyan.400"/></SliderTrack>
             <SliderThumb/>
           </Slider>
         </FormControl>
@@ -684,7 +684,7 @@ export default function WifiConfig({ device, onApplied }: WifiConfigProps) {
     <Box bg="gray.800" p={4} borderRadius="lg" color="white" maxW="100%" overflowX="hidden">
       {header}
 
-      <Tabs colorScheme="teal" variant="enclosed" isFitted>
+      <Tabs colorScheme="cyan" variant="enclosed" isFitted>
         <TabList>
           {RADIOS.map(r => (
             <Tab key={r.idx} _selected={{ bg:"gray.700" }}>

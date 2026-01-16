@@ -438,7 +438,7 @@ const ParametersEditor: React.FC<Props> = ({ deviceId }) => {
                   aria-label="Refresh"
                   icon={<FiRefreshCw />}
                   onClick={fetchData}
-                  colorScheme="teal"
+                  colorScheme="cyan"
                   variant="outline"
                 />
               </Tooltip>

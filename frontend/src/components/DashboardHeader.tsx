@@ -21,7 +21,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 }) => {
   const textColor = useColorModeValue("white", "whiteAlpha.900");
   const subColor = useColorModeValue("gray.400", "gray.500");
-  const bgButton = useColorModeValue("blue.500", "blue.600");
 
   return (
     <MotionFlex
@@ -49,7 +48,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <Button
             variant="outline"
             size="sm"
-            colorScheme="teal"
+            colorScheme="cyan"
             leftIcon={<Icon as={RefreshCcw} boxSize={4} />}
             onClick={onRefresh}
           >
@@ -59,9 +58,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
         {onNewCommand && (
           <Button
-            colorScheme="blue"
+            colorScheme="cyan"
             size="sm"
-            bg={bgButton}
             leftIcon={<Icon as={Plus} boxSize={4} />}
             onClick={onNewCommand}
           >

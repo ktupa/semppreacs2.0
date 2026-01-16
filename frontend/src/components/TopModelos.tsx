@@ -75,7 +75,7 @@ export default function TopModelos({
   );
 
   return (
-    <Box bg="gray.800" p={4} borderRadius="lg" border="1px solid" borderColor="gray.700" boxShadow="lg">
+    <Box bg="gray.800" p={4} borderRadius="xl" border="1px solid" borderColor="cyan.700" boxShadow="lg">
       <HStack justify="space-between" mb={2}>
         <Text fontSize="lg" fontWeight="bold" color="white">
           🏆 Top modelos (no seu contexto)
@@ -83,12 +83,12 @@ export default function TopModelos({
         <HStack>
           {requireTag && <Badge colorScheme="purple">Tag: {requireTag}</Badge>}
           {onlyOnline && <Badge colorScheme="green">Ativos</Badge>}
-          <Badge colorScheme="blue">Janela: {sinceMinutes} min</Badge>
+          <Badge colorScheme="cyan">Janela: {sinceMinutes} min</Badge>
         </HStack>
       </HStack>
 
       {loading ? (
-        <Spinner color="teal.300" />
+        <Spinner color="cyan.400" />
       ) : agrupados.length === 0 ? (
         <Text color="gray.400" fontSize="sm">Sem dados no recorte atual.</Text>
       ) : (
@@ -103,9 +103,9 @@ export default function TopModelos({
                       <span>{m.fabricante ?? "–"} · <b>{m.modelo}</b></span>
                     </Tooltip>
                   </Text>
-                  <Badge colorScheme="teal">{m.total}</Badge>
+                  <Badge colorScheme="cyan">{m.total}</Badge>
                 </HStack>
-                <Progress value={rel} size="sm" colorScheme="teal" borderRadius="md" />
+                <Progress value={rel} size="sm" colorScheme="cyan" borderRadius="md" />
               </Box>
             );
           })}

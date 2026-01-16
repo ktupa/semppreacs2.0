@@ -16,13 +16,13 @@ import {
   HStack,
   Divider,
   Link,
+  Icon,
 } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { FaUser, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FiWifi } from "react-icons/fi";
 import axios from "axios";
 
-// Usar URL relativa para passar pelo proxy do Vite
-// Em prod, VITE_API_BASE pode apontar para o backend
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 export default function LoginPage() {
@@ -46,13 +46,11 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      // Tentar novo endpoint JWT primeiro
       const res = await axios.post(`${API_BASE}/auth/login`, {
         username,
         password,
       });
 
-      // Backend JWT retorna { access_token, token_type, expires_in, user }
       if (res?.data?.access_token) {
         localStorage.setItem("token", res.data.access_token);
         localStorage.setItem("user", JSON.stringify(res.data.user || {}));
@@ -68,7 +66,6 @@ export default function LoginPage() {
         throw new Error("Token não recebido");
       }
     } catch (err) {
-      // Fallback para login antigo do GenieACS
       try {
         const { logIn } = await import("../services/genieAcsApi");
         await logIn(username, password);
@@ -102,7 +99,7 @@ export default function LoginPage() {
       display="flex"
       flexDirection="column"
       bg="gray.900"
-      bgGradient="linear(to-br, gray.900, purple.900, gray.900)"
+      bgGradient="linear(to-br, gray.900, cyan.900, gray.900)"
     >
       <VStack flex="1" justify="center" align="center" p={{ base: 4, md: 8 }}>
         <VStack
@@ -112,45 +109,43 @@ export default function LoginPage() {
           rounded="2xl"
           shadow="2xl"
           w="full"
-          maxW="400px"
-          border="1px solid"
-          borderColor="whiteAlpha.100"
+          maxW="420px"
+          border="2px solid"
+          borderColor="cyan.700"
         >
           {/* Logo */}
-          <VStack spacing={2}>
+          <VStack spacing={3}>
             <Box
-              w="80px"
-              h="80px"
-              bg="teal.500"
+              w="90px"
+              h="90px"
+              bg="linear-gradient(135deg, #0891b2 0%, #06b6d4 100%)"
               rounded="2xl"
               display="flex"
               alignItems="center"
               justifyContent="center"
-              boxShadow="lg"
+              boxShadow="0 8px 32px rgba(6, 182, 212, 0.3)"
             >
-              <Text fontSize="2xl" fontWeight="bold" color="white">
-                ACS
-              </Text>
+              <Icon as={FiWifi} boxSize={10} color="white" />
             </Box>
-            <Heading size="lg" color="white">
+            <Heading size="lg" color="white" fontWeight="bold">
               Semppre ACS
             </Heading>
-            <Text color="gray.400" fontSize="sm">
+            <Text color="cyan.200" fontSize="sm" fontWeight="medium">
               Sistema de Gerenciamento TR-069
             </Text>
           </VStack>
 
-          <Divider borderColor="whiteAlpha.200" />
+          <Divider borderColor="gray.600" />
 
           {/* Form */}
-          <VStack spacing={4} w="full">
+          <VStack spacing={5} w="full">
             <FormControl>
-              <FormLabel color="gray.300" fontSize="sm">
+              <FormLabel color="cyan.200" fontSize="sm" fontWeight="bold">
                 Usuário
               </FormLabel>
               <InputGroup>
                 <InputLeftElement>
-                  <FaUser color="gray" />
+                  <Icon as={FaUser} color="cyan.400" />
                 </InputLeftElement>
                 <Input
                   value={username}
@@ -158,22 +153,23 @@ export default function LoginPage() {
                   onKeyPress={handleKeyPress}
                   placeholder="Digite seu usuário"
                   bg="gray.700"
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
+                  border="2px solid"
+                  borderColor="gray.600"
                   color="white"
-                  _focus={{ borderColor: "teal.400" }}
-                  _placeholder={{ color: "gray.500" }}
+                  _hover={{ borderColor: "cyan.500" }}
+                  _focus={{ borderColor: "cyan.400", boxShadow: "0 0 0 2px rgba(6, 182, 212, 0.3)" }}
+                  _placeholder={{ color: "gray.400" }}
                 />
               </InputGroup>
             </FormControl>
 
             <FormControl>
-              <FormLabel color="gray.300" fontSize="sm">
+              <FormLabel color="cyan.200" fontSize="sm" fontWeight="bold">
                 Senha
               </FormLabel>
               <InputGroup>
                 <InputLeftElement>
-                  <FaLock color="gray" />
+                  <Icon as={FaLock} color="cyan.400" />
                 </InputLeftElement>
                 <Input
                   type={showPassword ? "text" : "password"}
@@ -182,19 +178,21 @@ export default function LoginPage() {
                   onKeyPress={handleKeyPress}
                   placeholder="Digite sua senha"
                   bg="gray.700"
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
+                  border="2px solid"
+                  borderColor="gray.600"
                   color="white"
-                  _focus={{ borderColor: "teal.400" }}
-                  _placeholder={{ color: "gray.500" }}
+                  _hover={{ borderColor: "cyan.500" }}
+                  _focus={{ borderColor: "cyan.400", boxShadow: "0 0 0 2px rgba(6, 182, 212, 0.3)" }}
+                  _placeholder={{ color: "gray.400" }}
                 />
                 <InputRightElement>
                   <IconButton
                     aria-label="Toggle password"
                     icon={showPassword ? <FaEyeSlash /> : <FaEye />}
                     variant="ghost"
-                    colorScheme="gray"
                     size="sm"
+                    color="cyan.400"
+                    _hover={{ color: "cyan.200", bg: "gray.600" }}
                     onClick={() => setShowPassword(!showPassword)}
                   />
                 </InputRightElement>
@@ -202,31 +200,34 @@ export default function LoginPage() {
             </FormControl>
 
             <Button
-              colorScheme="teal"
+              colorScheme="cyan"
               w="full"
               size="lg"
               onClick={handleLogin}
               isLoading={loading}
               loadingText="Entrando..."
               mt={2}
+              fontWeight="bold"
+              _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
+              transition="all 0.2s"
             >
               Entrar
             </Button>
           </VStack>
 
-          <Divider borderColor="whiteAlpha.200" />
+          <Divider borderColor="gray.600" />
 
           {/* Footer */}
           <VStack spacing={1}>
-            <Text color="gray.500" fontSize="xs">
+            <Text color="gray.400" fontSize="xs">
               © 2025 Semppre ACS - Marcos Vinicius
             </Text>
             <HStack spacing={2} fontSize="xs">
-              <Link color="teal.400" href="#">
+              <Link color="cyan.400" href="#" _hover={{ color: "cyan.200" }}>
                 Suporte
               </Link>
               <Text color="gray.600">•</Text>
-              <Link color="teal.400" href="#">
+              <Link color="cyan.400" href="#" _hover={{ color: "cyan.200" }}>
                 Documentação
               </Link>
             </HStack>
@@ -236,4 +237,3 @@ export default function LoginPage() {
     </Box>
   );
 }
-

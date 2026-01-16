@@ -170,7 +170,7 @@ export default function TesteConectividade({ deviceId, device }: Props) {
 
               <Button
                 size="sm"
-                colorScheme="teal"
+                colorScheme="cyan"
                 variant="outline"
                 onClick={() => testarHostPing(s.host)}
                 isDisabled={statusMap[s.host] === "loading"}

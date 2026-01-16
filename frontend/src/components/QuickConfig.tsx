@@ -652,7 +652,7 @@ const QuickConfig: React.FC<Props> = ({ deviceId, onSaved }) => {
             <Card bg={cardBg} variant="outline">
               <CardHeader pb={2}>
                 <HStack>
-                  <Icon as={FiServer} color="teal.500" />
+                  <Icon as={FiServer} color="cyan.500" />
                   <Text fontWeight="bold">Configurações LAN e DHCP</Text>
                 </HStack>
               </CardHeader>

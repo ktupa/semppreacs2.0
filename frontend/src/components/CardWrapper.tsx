@@ -31,7 +31,8 @@ export default function CardWrapper({
       whileTap={hoverable ? { scale: 0.98 } : {}}
       transition="all 0.2s ease-in-out"
       border="1px solid"
-      borderColor={useColorModeValue("gray.700", "gray.700")}
+      borderColor={useColorModeValue("gray.600", "gray.600")}
+      _hover={{ borderColor: "cyan.700" }}
     >
       {children}
     </MotionBox>

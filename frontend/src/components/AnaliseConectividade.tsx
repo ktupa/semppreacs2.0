@@ -253,7 +253,7 @@ export default function AnaliseConectividade() {
 
                 <Button
                   size="sm"
-                  colorScheme="teal"
+                  colorScheme="cyan"
                   variant="outline"
                   onClick={() => abrirDiagnostico(serie)}
                 >

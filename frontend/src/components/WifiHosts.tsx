@@ -315,7 +315,7 @@ function TopologyBar({
             <HStack spacing={2} wrap="wrap">
               {activos.map((h, i) => (
                 <Tooltip key={i} label={`${h.hostname || "—"} • ${h.ip || "—"}`}>
-                  <Badge colorScheme="teal">
+                  <Badge colorScheme="cyan">
                     <HStack>
                       <Icon as={FiSmartphone} />
                       <Text>{h.hostname || h.ip || h.mac || "host"}</Text>

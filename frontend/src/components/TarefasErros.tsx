@@ -246,7 +246,7 @@ export default function TarefasErros() {
         </HStack>
       </HStack>
 
-      <Tabs colorScheme="teal" isFitted>
+      <Tabs colorScheme="cyan" isFitted>
         <TabList>
           <Tab>
             Tarefas recentes
@@ -266,7 +266,7 @@ export default function TarefasErros() {
           <TabPanel px={0}>
             {loading ? (
               <HStack justify="center" py={4}>
-                <Spinner size="md" color="teal.400" />
+                <Spinner size="md" color="cyan.400" />
                 <Text color="gray.400">Carregando...</Text>
               </HStack>
             ) : allTasks.length ? (
@@ -305,7 +305,7 @@ export default function TarefasErros() {
           <TabPanel px={0}>
             {loading ? (
               <HStack justify="center" py={4}>
-                <Spinner size="md" color="teal.400" />
+                <Spinner size="md" color="cyan.400" />
                 <Text color="gray.400">Carregando...</Text>
               </HStack>
             ) : allErrors.length ? (

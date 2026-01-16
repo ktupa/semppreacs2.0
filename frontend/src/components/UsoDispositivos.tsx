@@ -86,7 +86,7 @@ export default function UsoDispositivos({
       </HStack>
 
       {loading ? (
-        <Spinner color="teal.300" />
+        <Spinner color="cyan.300" />
       ) : modelos.length === 0 ? (
         <Text color="gray.400" fontSize="sm">Sem dispositivos no recorte.</Text>
       ) : (
@@ -104,11 +104,11 @@ export default function UsoDispositivos({
                     </Tooltip>
                   </Text>
                   <HStack>
-                    <Badge colorScheme="teal">{m.total}</Badge>
+                    <Badge colorScheme="cyan">{m.total}</Badge>
                     <Badge colorScheme="gray">{shareLocal}%</Badge>
                   </HStack>
                 </HStack>
-                <Progress value={pctRelTop} size="sm" colorScheme="teal" borderRadius="md" />
+                <Progress value={pctRelTop} size="sm" colorScheme="cyan" borderRadius="md" />
               </Box>
             );
           })}

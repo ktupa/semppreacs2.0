@@ -55,9 +55,9 @@ export default function StatusDispositivos() {
     <Box
       bg="gray.800"
       p={5}
-      borderRadius="lg"
+      borderRadius="xl"
       border="1px solid"
-      borderColor="gray.700"
+      borderColor="cyan.700"
       boxShadow="lg"
     >
       <Text fontSize="lg" fontWeight="bold" mb={3} color="white">
@@ -65,23 +65,23 @@ export default function StatusDispositivos() {
       </Text>
 
       {loading ? (
-        <Spinner color="teal.300" />
+        <Spinner color="cyan.400" />
       ) : (
         <>
           <Stat>
-            <StatLabel color="gray.400">Online</StatLabel>
-            <StatNumber color="green.300" fontSize="2xl">
+            <StatLabel color="cyan.200" fontWeight="semibold">Online</StatLabel>
+            <StatNumber color="green.400" fontSize="2xl">
               {online}
             </StatNumber>
-            <StatHelpText color="gray.500">Total: {total}</StatHelpText>
+            <StatHelpText color="gray.400">Total: {total}</StatHelpText>
           </Stat>
 
-          <Text fontSize="sm" mt={4} color="gray.400">
+          <Text fontSize="sm" mt={4} color="gray.300">
             Ativos nos últimos 5 minutos
           </Text>
 
           <Progress
-            colorScheme="teal"
+            colorScheme="cyan"
             value={percentualOnline}
             size="sm"
             mt={2}

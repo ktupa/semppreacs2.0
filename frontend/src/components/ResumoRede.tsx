@@ -52,29 +52,29 @@ export default function ResumoRede() {
     <Flex
       bg="gray.800"
       p={5}
-      borderRadius="lg"
+      borderRadius="xl"
       border="1px solid"
-      borderColor="gray.700"
+      borderColor="cyan.700"
       justify="space-between"
       align="center"
       boxShadow="lg"
     >
       <Stat>
-        <StatLabel color="gray.400">Total de CPEs</StatLabel>
+        <StatLabel color="cyan.200" fontWeight="semibold">Total de CPEs</StatLabel>
         <StatNumber color="white" fontSize="2xl">
           {total}
         </StatNumber>
       </Stat>
 
       <Stat>
-        <StatLabel color="gray.400">Online</StatLabel>
+        <StatLabel color="cyan.200" fontWeight="semibold">Online</StatLabel>
         <StatNumber color="green.400" fontSize="2xl">
           {online}
         </StatNumber>
       </Stat>
 
       <Stat>
-        <StatLabel color="gray.400">Offline</StatLabel>
+        <StatLabel color="cyan.200" fontWeight="semibold">Offline</StatLabel>
         <StatNumber color="red.400" fontSize="2xl">
           {total - online}
         </StatNumber>

@@ -1,0 +1,42 @@
+{
+  "users": {
+    "view": "Visualizar usuários",
+    "create": "Criar usuários",
+    "edit": "Editar usuários",
+    "delete": "Remover usuários"
+  },
+  "groups": {
+    "view": "Visualizar grupos",
+    "create": "Criar grupos",
+    "edit": "Editar grupos",
+    "delete": "Remover grupos"
+  },
+  "devices": {
+    "view": "Visualizar dispositivos",
+    "edit": "Editar dispositivos",
+    "reboot": "Reiniciar dispositivos",
+    "delete": "Remover dispositivos",
+    "provision": "Provisionar dispositivos"
+  },
+  "config": {
+    "view": "Visualizar configurações",
+    "edit": "Editar configurações"
+  },
+  "backup": {
+    "view": "Visualizar backups",
+    "create": "Criar backups",
+    "restore": "Restaurar backups"
+  },
+  "logs": {
+    "view": "Visualizar logs",
+    "delete": "Limpar logs"
+  },
+  "reports": {
+    "view": "Visualizar relatórios",
+    "export": "Exportar relatórios"
+  },
+  "system": {
+    "update": "Atualizar sistema",
+    "settings": "Configurações do sistema"
+  }
+}

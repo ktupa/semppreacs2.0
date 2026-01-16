@@ -142,11 +142,11 @@ export default function AlertasRecentes({
   };
 
   return (
-    <Box bg="gray.800" p={4} borderRadius="lg" border="1px solid" borderColor="gray.700">
+    <Box bg="gray.800" p={4} borderRadius="xl" border="1px solid" borderColor="cyan.700">
       {/* Header */}
       <HStack justify="space-between" mb={4}>
         <HStack>
-          <BellIcon color="teal.400" boxSize={5} />
+          <BellIcon color="cyan.400" boxSize={5} />
           <Text fontWeight="bold" color="white">
             Alertas do Sistema
           </Text>
@@ -237,7 +237,7 @@ export default function AlertasRecentes({
       {/* Alerts List */}
       {loading && alerts.length === 0 ? (
         <HStack justify="center" py={6}>
-          <Spinner size="md" color="teal.400" />
+          <Spinner size="md" color="cyan.400" />
           <Text color="gray.400">Carregando alertas...</Text>
         </HStack>
       ) : alerts.length === 0 ? (

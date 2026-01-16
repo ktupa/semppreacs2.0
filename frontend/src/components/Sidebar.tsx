@@ -17,7 +17,7 @@ import {
   HStack,
   Avatar,
 } from "@chakra-ui/react";
-import { FiHome, FiTerminal, FiFileText, FiSettings, FiMenu, FiLogOut } from "react-icons/fi";
+import { FiHome, FiTerminal, FiFileText, FiSettings, FiMenu, FiLogOut, FiUsers } from "react-icons/fi";
 import { MdDevices } from "react-icons/md";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -34,7 +34,7 @@ export const Sidebar: React.FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const bg = useColorModeValue("gray.900", "gray.900");
-  const accent = useColorModeValue("teal.300", "teal.300");
+  const accent = useColorModeValue("cyan.400", "cyan.400");
   const activeBg = useColorModeValue("gray.800", "gray.800");
   
   const isMobile = useBreakpointValue({ base: true, md: false });
@@ -44,6 +44,7 @@ export const Sidebar: React.FC = () => {
     { label: "Dispositivos", icon: <MdDevices />, to: "/dispositivos", aria: "Dispositivos" },
     { label: "Comandos", icon: <FiTerminal />, to: "/logs", aria: "Comandos" },
     { label: "Logs", icon: <FiFileText />, to: "/logs", aria: "Logs" },
+    { label: "Usuários", icon: <FiUsers />, to: "/usuarios", aria: "Usuários" },
     { label: "Configurações", icon: <FiSettings />, to: "/configuracoes", aria: "Configurações" },
   ];
 
@@ -73,7 +74,7 @@ export const Sidebar: React.FC = () => {
         {/* Logo / Header */}
         <HStack mb={6} px={isMobile ? 4 : 2} justify={isMobile ? "space-between" : "center"}>
           <HStack>
-            <Avatar size="sm" bg="teal.500" name="ACS" />
+            <Avatar size="sm" bg="cyan.500" name="ACS" />
             {isMobile && (
               <Text fontSize="lg" fontWeight="bold" letterSpacing="wide">
                 Semppre ACS
@@ -122,7 +123,7 @@ export const Sidebar: React.FC = () => {
                   aria-label={it.aria}
                   icon={it.icon}
                   variant="ghost"
-                  colorScheme="teal"
+                  colorScheme="cyan"
                   onClick={() => handleNavigate(it.to)}
                   _hover={{ bg: activeBg }}
                   bg={isActive ? activeBg : "transparent"}
@@ -130,7 +131,7 @@ export const Sidebar: React.FC = () => {
                   w="56px"
                   h="56px"
                   borderRadius="xl"
-                  _focusVisible={{ boxShadow: "0 0 0 2px rgba(56, 178, 172, 0.7)" }}
+                  _focusVisible={{ boxShadow: "0 0 0 2px rgba(6, 182, 212, 0.7)" }}
                   sx={{
                     "&::before": isActive
                       ? {
@@ -205,7 +206,7 @@ export const Sidebar: React.FC = () => {
           top={4}
           left={4}
           zIndex={20}
-          colorScheme="teal"
+          colorScheme="cyan"
           onClick={onOpen}
           size="lg"
           borderRadius="full"

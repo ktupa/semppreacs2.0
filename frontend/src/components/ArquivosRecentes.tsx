@@ -75,7 +75,7 @@ export default function ArquivosRecentes() {
           </Button>
           <Button
             size="xs"
-            colorScheme="teal"
+            colorScheme="cyan"
             variant="outline"
             onClick={() => window.open("/genie-ui/#/files", "_blank")}
           >

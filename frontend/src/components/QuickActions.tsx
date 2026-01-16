@@ -29,7 +29,7 @@ export default function QuickActions({ device, onAfter }: Props){
           onClick={()=> doTask(()=>createTask(id,{name:"factoryReset"},true),"Reset solicitado","Falha no reset")}>Factory Reset</Button></Tooltip>
         <Tooltip label="Forçar novo Inform/Get"><Button leftIcon={<RefreshCw size={16}/>} variant="outline"
           onClick={()=> doTask(()=>createTask(id,{name:"getParameterValues", parameterNames:["InternetGatewayDevice.","Device."] as any},true),"Get solicitado","Falha ao solicitar Get")}>Inform/Get</Button></Tooltip>
-        <Tooltip label="TR-069 DownloadDiagnostics"><Button leftIcon={<Download size={16}/>} colorScheme="teal"
+        <Tooltip label="TR-069 DownloadDiagnostics"><Button leftIcon={<Download size={16}/>} colorScheme="cyan"
           onClick={()=> doTask(()=>enviarDownloadDiagnostics(id),"DownloadDiagnostics enviado","Falha no DownloadDiagnostics")}>Diagnóstico</Button></Tooltip>
       </HStack>
     </Box>

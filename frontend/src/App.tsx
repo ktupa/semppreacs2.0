@@ -19,6 +19,7 @@ import Logs from "./pages/Logs";
 import Configuracoes from "./pages/Configuracoes";
 import DispositivoDashboard from "./pages/DispositivoDashboard";
 import Dashboard from "./pages/Dashboard";
+import Usuarios from "./pages/Usuarios";
 
 // Em dev, API_BASE vazio usa proxy do Vite; em prod deve apontar para backend
 const API_BASE = import.meta.env.VITE_API_BASE || "";
@@ -75,7 +76,7 @@ function PrivateRoute({ children }: PrivateRouteProps) {
   if (isValid === null) {
     return (
       <Center h="100vh" bg="gray.900">
-        <Spinner size="xl" color="teal.400" />
+        <Spinner size="xl" color="cyan.400" />
       </Center>
     );
   }
@@ -165,6 +166,16 @@ function AppContent() {
           <PrivateRoute>
             <PainelLayout>
               <Configuracoes />
+            </PainelLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/usuarios"
+        element={
+          <PrivateRoute>
+            <PainelLayout>
+              <Usuarios />
             </PainelLayout>
           </PrivateRoute>
         }

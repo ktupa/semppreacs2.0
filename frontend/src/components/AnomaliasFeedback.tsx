@@ -422,7 +422,7 @@ export default function AnomaliasFeedback({
                         </HStack>
                         <HStack fontSize="xs" color="gray.400" spacing={2}>
                           <Link
-                            color="teal.400"
+                            color="cyan.400"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeviceClick(anomaly.device_id);
@@ -534,7 +534,7 @@ export default function AnomaliasFeedback({
                     <HStack spacing={2} flexWrap="wrap">
                       <Button
                         size="sm"
-                        colorScheme="teal"
+                        colorScheme="cyan"
                         leftIcon={<ExternalLinkIcon />}
                         onClick={() => handleDeviceClick(anomaly.device_id)}
                       >
@@ -641,19 +641,19 @@ export default function AnomaliasFeedback({
                   </Text>
                   <RadioGroup value={actionTaken} onChange={setActionTaken}>
                     <Stack spacing={2}>
-                      <Radio value="reboot" colorScheme="teal">
+                      <Radio value="reboot" colorScheme="cyan">
                         <Text color="gray.200" fontSize="sm">Reiniciei o dispositivo</Text>
                       </Radio>
-                      <Radio value="config_change" colorScheme="teal">
+                      <Radio value="config_change" colorScheme="cyan">
                         <Text color="gray.200" fontSize="sm">Alterei configuração</Text>
                       </Radio>
-                      <Radio value="contacted_user" colorScheme="teal">
+                      <Radio value="contacted_user" colorScheme="cyan">
                         <Text color="gray.200" fontSize="sm">Contatei o cliente</Text>
                       </Radio>
-                      <Radio value="ignored" colorScheme="teal">
+                      <Radio value="ignored" colorScheme="cyan">
                         <Text color="gray.200" fontSize="sm">Ignorei o alerta</Text>
                       </Radio>
-                      <Radio value="other" colorScheme="teal">
+                      <Radio value="other" colorScheme="cyan">
                         <Text color="gray.200" fontSize="sm">Outra ação</Text>
                       </Radio>
                     </Stack>
@@ -693,7 +693,7 @@ export default function AnomaliasFeedback({
               Cancelar
             </Button>
             <Button
-              colorScheme="teal"
+              colorScheme="cyan"
               onClick={handleFeedback}
               isLoading={submitting}
               leftIcon={<CheckIcon />}

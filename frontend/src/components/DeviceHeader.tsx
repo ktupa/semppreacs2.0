@@ -60,7 +60,7 @@ export default function DeviceHeader({ device, onRefresh }: Props) {
   return (
     <Box bg="gray.800" p={4} borderRadius="lg" border="1px solid" borderColor="gray.700">
       <HStack align="start" spacing={4}>
-        <Avatar name={model} bg="teal.500" />
+        <Avatar name={model} bg="cyan.500" />
         <VStack align="start" spacing={1}>
           <HStack>
             <Text fontSize="xl" fontWeight="bold" color="white">{model}</Text>

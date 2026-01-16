@@ -558,7 +558,7 @@ export default function WifiConfigDualBand({ device, deviceId, onApplied }: Wifi
               Configuração WiFi Dual Band
             </Text>
             <HStack spacing={2}>
-              <Badge colorScheme="teal">{dataModel}</Badge>
+              <Badge colorScheme="cyan">{dataModel}</Badge>
               <Badge colorScheme="gray">{manufacturer}</Badge>
             </HStack>
           </VStack>
@@ -627,7 +627,7 @@ export default function WifiConfigDualBand({ device, deviceId, onApplied }: Wifi
               </Badge>
             </Text>
             <Text color="gray.300" mt={2}>
-              Data Model: <Badge colorScheme="teal">{dataModel}</Badge>
+              Data Model: <Badge colorScheme="cyan">{dataModel}</Badge>
             </Text>
           </ModalBody>
           <ModalFooter>

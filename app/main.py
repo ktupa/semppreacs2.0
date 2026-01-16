@@ -23,6 +23,7 @@ from app.routers.device_params_router import router as device_params_router  # g
 from app.routers.provisioning_router import router as provisioning_router  # auto-provisioning
 from app.routers.mobile_api_router import router as mobile_api_router  # API para aplicativo mobile
 from app.routers.update_router import router as update_router  # sistema de atualizações
+from app.routers.users_router import router as users_router  # gerenciamento de usuários e grupos
 from app.database import init_db  # inicialização do banco
 
 import base64
@@ -265,6 +266,41 @@ async def proxy_genie_nbi(path: str, request: Request):
     upstream = settings.GENIE_NBI.rstrip("/")
     return await stream_proxy(request, upstream)
 
+# =========================
+# /api-genie - Proxy direto para GenieACS NBI (frontend em produção usa esse endpoint)
+# =========================
+@app.api_route("/api-genie/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
+async def proxy_api_genie(path: str, request: Request):
+    """
+    Proxy para GenieACS NBI - usado pelo frontend em produção.
+    Substitui o proxy do Vite que funciona apenas em desenvolvimento.
+    """
+    upstream = settings.GENIE_NBI.rstrip("/")
+    # Reconstruir URL com path
+    url = f"{upstream}/{path}"
+    if request.url.query:
+        url = f"{url}?{request.url.query}"
+    
+    method = request.method.upper()
+    headers = dict(request.headers)
+    # remove hop-by-hop headers
+    for h in ["host", "content-length", "connection", "keep-alive", "transfer-encoding", "upgrade"]:
+        headers.pop(h, None)
+    
+    body = await request.body()
+    timeout = httpx.Timeout(60.0, read=120.0, write=60.0, connect=30.0)
+    
+    async with httpx.AsyncClient(timeout=timeout, verify=False) as client:
+        try:
+            r = await client.request(method, url, headers=headers, content=body)
+        except httpx.HTTPError as e:
+            raise HTTPException(status_code=502, detail=f"GenieACS NBI error: {e}")
+    
+    resp_headers = {k: v for k, v in r.headers.items() 
+                    if k.lower() not in {"content-encoding", "transfer-encoding", "connection"}}
+    return Response(content=r.content, status_code=r.status_code, 
+                   headers=resp_headers, media_type=r.headers.get("content-type"))
+
 @app.get("/genie/devices/{device_id}")
 async def genie_device(device_id: str):
     # GenieACS doesn't support /devices/{id} directly, need to use query
@@ -341,6 +377,65 @@ async def ixc_cliente_dados_by_login(login: str):
         return {"found": False, "login": login, "message": "Não foi possível obter dados do IXC para este login."}
     return data
 
+
+@router_ixc.get("/cliente/completo/by-login/{login}")
+async def ixc_cliente_completo_by_login(login: str):
+    """
+    NOVO: Retorna dados COMPLETOS do cliente: radusuario + cliente + contratos + faturas.
+    
+    Fluxo:
+    1. Busca radusuarios pelo login PPPoE
+    2. Com id_cliente, busca dados cadastrais completos
+    3. Busca todos os contratos do cliente
+    4. Busca todas as faturas (últimas 50)
+    5. Calcula resumo financeiro (em dia, pendente, inadimplente)
+    
+    Retorna tudo consolidado em um único objeto.
+    """
+    from app.services.ixc_service import get_cliente_dados_completos
+    
+    data = await get_cliente_dados_completos(login.strip())
+    if not data.get("found"):
+        return {"found": False, "login": login, "message": data.get("message", "Não foi possível obter dados do IXC para este login.")}
+    return data
+
+
+@router_ixc.get("/cliente/{cliente_id}/contratos")
+async def ixc_contratos_cliente(cliente_id: str):
+    """
+    Busca contratos de um cliente pelo ID.
+    """
+    from app.services.ixc_service import get_contratos_cliente
+    return await get_contratos_cliente(cliente_id.strip())
+
+
+@router_ixc.get("/cliente/{cliente_id}/faturas")
+async def ixc_faturas_cliente(cliente_id: str, limit: int = 20):
+    """
+    Busca faturas de um cliente pelo ID.
+    """
+    from app.services.ixc_service import get_faturas_cliente
+    return await get_faturas_cliente(cliente_id.strip(), limit=min(limit, 100))
+
+
+@router_ixc.get("/contrato/{contrato_id}")
+async def ixc_contrato(contrato_id: str):
+    """
+    Busca dados de um contrato pelo ID.
+    """
+    from app.integrations.ixc import ixc_get_contrato_por_id
+    result = await ixc_get_contrato_por_id(contrato_id.strip())
+    return {"found": True, "contrato_id": contrato_id, "contrato": result}
+
+
+@router_ixc.get("/contrato/{contrato_id}/faturas")
+async def ixc_faturas_contrato(contrato_id: str, limit: int = 20):
+    """
+    Busca faturas de um contrato pelo ID.
+    """
+    from app.services.ixc_service import get_faturas_contrato
+    return await get_faturas_contrato(contrato_id.strip(), limit=min(limit, 100))
+
 # --------- CATCH-ALL (deve vir por ÚLTIMO no router) ---------
 @router_ixc.api_route("/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"])
 async def proxy_ixc(path: str, request: Request):
@@ -415,6 +510,9 @@ app.include_router(mobile_api_router)
 
 # registra router de atualizações do sistema
 app.include_router(update_router)
+
+# registra router de gerenciamento de usuários e grupos
+app.include_router(users_router)
 
 # =========================
 # INICIALIZAÇÃO DO BANCO
@@ -614,10 +712,10 @@ if os.path.exists(FRONTEND_DIST) and os.path.isdir(FRONTEND_DIST):
         Isso permite que o React Router funcione corretamente em produção.
         """
         # Se for uma rota API, não interceptar
-        if full_path.startswith(("api/", "genie/", "ixc/", "diagnostico/", "config/", 
+        if full_path.startswith(("api/", "api-genie/", "genie/", "ixc/", "diagnostico/", "config/", 
                                 "auth/", "backup/", "metrics/", "analytics/", "feeds/", 
                                 "webhooks/", "ml/", "provisioning/", "device-params/",
-                                "devices/", "api-tr069/", "tr069/",
+                                "devices/", "api-tr069/", "tr069/", "users-management/",
                                 "__debug/", "health")):
             raise HTTPException(status_code=404, detail="Not Found")
         

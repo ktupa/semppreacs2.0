@@ -127,7 +127,7 @@ export default function EstatisticasRede() {
 
             <Stat>
               <StatLabel color="gray.400">IPv6 Ativos</StatLabel>
-              <StatNumber color="teal.300">
+              <StatNumber color="cyan.300">
                 <FaGlobeAmericas style={{ marginRight: 4 }} />
                 {qtdIpv6}
               </StatNumber>
@@ -138,7 +138,7 @@ export default function EstatisticasRede() {
 
             <Stat>
               <StatLabel color="gray.400">Upload Total</StatLabel>
-              <StatNumber color="teal.300">
+              <StatNumber color="cyan.300">
                 <FaArrowUp style={{ marginRight: 4 }} />
                 {formatarBytes(totalUp)}
               </StatNumber>
@@ -146,7 +146,7 @@ export default function EstatisticasRede() {
 
             <Stat>
               <StatLabel color="gray.400">Download Total</StatLabel>
-              <StatNumber color="teal.300">
+              <StatNumber color="cyan.300">
                 <FaArrowDown style={{ marginRight: 4 }} />
                 {formatarBytes(totalDown)}
               </StatNumber>

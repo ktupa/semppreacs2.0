@@ -90,7 +90,7 @@ export default function StatusCard() {
       </Text>
       <Progress
         value={pct24h}
-        colorScheme="teal"
+        colorScheme="cyan"
         size="sm"
         mt={2}
         borderRadius="md"
