@@ -1,0 +1,32 @@
+{
+  "update_server": {
+    "type": "git",
+    "repository": "https://github.com/seuusuario/semppre-bridge.git",
+    "branch": "main",
+    "release_branch": "releases"
+  },
+  "version": {
+    "current": "1.2.0",
+    "check_interval_hours": 24,
+    "auto_update": false
+  },
+  "protected_files": [
+    ".env",
+    "data/users.json",
+    "data/ml/baselines.json",
+    "data/ml/patterns.json",
+    "data/ml/thresholds.json"
+  ],
+  "protected_dirs": [
+    "data/backups",
+    "logs"
+  ],
+  "post_update_commands": [
+    "cd /opt/semppre-bridge && pip install -r requirements.txt --quiet",
+    "cd /opt/semppre-bridge/frontend && npm install --silent",
+    "cd /opt/semppre-bridge/frontend && npm run build"
+  ],
+  "services_to_restart": [
+    "semppre-bridge"
+  ]
+}

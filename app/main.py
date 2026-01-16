@@ -22,6 +22,7 @@ from app.routers.backup_router import router as backup_router  # backup e restor
 from app.routers.device_params_router import router as device_params_router  # gerenciamento completo de parâmetros
 from app.routers.provisioning_router import router as provisioning_router  # auto-provisioning
 from app.routers.mobile_api_router import router as mobile_api_router  # API para aplicativo mobile
+from app.routers.update_router import router as update_router  # sistema de atualizações
 from app.database import init_db  # inicialização do banco
 
 import base64
@@ -411,6 +412,9 @@ app.include_router(provisioning_router)
 
 # registra router da API Mobile
 app.include_router(mobile_api_router)
+
+# registra router de atualizações do sistema
+app.include_router(update_router)
 
 # =========================
 # SERVIR FRONTEND (SPA)

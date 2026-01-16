@@ -49,6 +49,7 @@ import {
   FaCheck,
 } from "react-icons/fa";
 import axios from "axios";
+import SystemUpdater from "../components/SystemUpdater";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
@@ -308,6 +309,7 @@ export default function Configuracoes() {
           <Tab _selected={{ bg: "cyan.600" }}>📡 Inform Automático</Tab>
           <Tab _selected={{ bg: "cyan.600" }}>📊 Métricas</Tab>
           <Tab _selected={{ bg: "cyan.600" }}>🔐 Segurança</Tab>
+          <Tab _selected={{ bg: "cyan.600" }}>🔄 Sistema</Tab>
         </TabList>
 
         <TabPanels>
@@ -660,6 +662,31 @@ export default function Configuracoes() {
                 </Button>
               </HStack>
             </Box>
+          </TabPanel>
+
+          {/* Tab Sistema / Atualizações */}
+          <TabPanel>
+            <VStack spacing={6} align="stretch">
+              <SystemUpdater />
+              
+              <Box bg="gray.800" p={6} borderRadius="xl">
+                <Text fontWeight="bold" mb={4}>📋 Informações do Sistema</Text>
+                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                  <Box p={4} bg="gray.700" borderRadius="md">
+                    <Text fontSize="sm" color="gray.400">Servidor</Text>
+                    <Text fontWeight="bold">SemPPRE Bridge</Text>
+                  </Box>
+                  <Box p={4} bg="gray.700" borderRadius="md">
+                    <Text fontSize="sm" color="gray.400">Ambiente</Text>
+                    <Text fontWeight="bold">Produção</Text>
+                  </Box>
+                  <Box p={4} bg="gray.700" borderRadius="md">
+                    <Text fontSize="sm" color="gray.400">Dispositivos</Text>
+                    <Text fontWeight="bold">{stats.total_devices} total</Text>
+                  </Box>
+                </SimpleGrid>
+              </Box>
+            </VStack>
           </TabPanel>
         </TabPanels>
       </Tabs>

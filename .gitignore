@@ -30,3 +30,18 @@ yarn-error.log
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Database local
+*.db
+data/*.db
+data/semppre_acs.db
+
+# Backups do updater
+updater/backups/
+
+# Frontend build (opcional - pode incluir se quiser distribuir buildado)
+# frontend/dist/
