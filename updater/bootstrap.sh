@@ -60,6 +60,61 @@ fi
 log_info "Diretório encontrado: $INSTALL_DIR"
 cd "$INSTALL_DIR"
 
+# ============ DETECTAR USUÁRIO E GRUPO DO SISTEMA ============
+# Detecta o usuário que roda o serviço (não root)
+SERVICE_USER=""
+SERVICE_GROUP=""
+
+# Tenta detectar pelo processo uvicorn
+if pgrep -f "uvicorn app.main" > /dev/null 2>&1; then
+    SERVICE_USER=$(ps -o user= -p $(pgrep -f "uvicorn app.main" | head -1) 2>/dev/null | tr -d ' ')
+fi
+
+# Fallback: detectar pelo dono do arquivo .env ou app/main.py
+if [ -z "$SERVICE_USER" ] || [ "$SERVICE_USER" = "root" ]; then
+    if [ -f ".env" ]; then
+        SERVICE_USER=$(stat -c '%U' .env 2>/dev/null)
+        SERVICE_GROUP=$(stat -c '%G' .env 2>/dev/null)
+    elif [ -f "app/main.py" ]; then
+        SERVICE_USER=$(stat -c '%U' app/main.py 2>/dev/null)
+        SERVICE_GROUP=$(stat -c '%G' app/main.py 2>/dev/null)
+    fi
+fi
+
+# Fallback: usuário comum (suporte, ubuntu, etc)
+if [ -z "$SERVICE_USER" ] || [ "$SERVICE_USER" = "root" ]; then
+    for user in suporte ubuntu admin www-data; do
+        if id "$user" &>/dev/null; then
+            SERVICE_USER="$user"
+            SERVICE_GROUP="$user"
+            break
+        fi
+    done
+fi
+
+# Se ainda não encontrou, usa o usuário atual (se não for root)
+if [ -z "$SERVICE_USER" ] || [ "$SERVICE_USER" = "root" ]; then
+    if [ "$EUID" -ne 0 ]; then
+        SERVICE_USER=$(whoami)
+        SERVICE_GROUP=$(id -gn)
+    fi
+fi
+
+log_info "Usuário do serviço detectado: ${SERVICE_USER:-root}:${SERVICE_GROUP:-root}"
+
+# ============ SALVAR PERMISSÕES ATUAIS ============
+log_info "Salvando permissões atuais dos arquivos de dados..."
+
+# Salvar permissões do diretório data
+declare -A DATA_PERMS
+if [ -d "data" ]; then
+    for file in data/*; do
+        if [ -f "$file" ]; then
+            DATA_PERMS["$file"]=$(stat -c '%U:%G' "$file" 2>/dev/null || echo "")
+        fi
+    done
+fi
+
 # Verificar se é um repositório git
 if [ ! -d ".git" ]; then
     log_error "Não é um repositório Git!"
@@ -69,22 +124,30 @@ if [ ! -d ".git" ]; then
     git remote add origin https://github.com/ktupa/semppreacs2.0.git
 fi
 
-# Salvar arquivos locais importantes
+# ============ BACKUP DE ARQUIVOS IMPORTANTES ============
 log_info "Salvando configurações locais..."
 
-# Backup do .env
-if [ -f ".env" ]; then
-    cp .env .env.backup
-    log_success ".env salvo"
-fi
+# Lista de arquivos a preservar (NÃO sobrescrever do repositório)
+PROTECTED_FILES=(
+    ".env"
+    "data/users.json"
+    "data/groups.json"
+    "data/permissions.json"
+    "data/semppre_acs.db"
+    "data/ml/baselines.json"
+    "data/ml/patterns.json"
+    "data/ml/thresholds.json"
+)
 
-# Backup do users.json
-if [ -f "data/users.json" ]; then
-    cp data/users.json data/users.json.backup
-    log_success "users.json salvo"
-fi
+# Fazer backup dos arquivos protegidos
+for file in "${PROTECTED_FILES[@]}"; do
+    if [ -f "$file" ]; then
+        cp "$file" "${file}.backup"
+        log_success "$file salvo"
+    fi
+done
 
-# Fazer fetch e pull
+# ============ BAIXAR ATUALIZAÇÕES ============
 log_info "Baixando atualizações do repositório..."
 
 # Stash de mudanças locais
@@ -113,36 +176,61 @@ else
     git checkout origin/main -- .
 fi
 
-# Restaurar arquivos locais
+# ============ RESTAURAR ARQUIVOS PROTEGIDOS ============
 log_info "Restaurando configurações locais..."
 
-if [ -f ".env.backup" ]; then
-    mv .env.backup .env
-    log_success ".env restaurado"
-fi
+for file in "${PROTECTED_FILES[@]}"; do
+    if [ -f "${file}.backup" ]; then
+        mv "${file}.backup" "$file"
+        log_success "$file restaurado"
+    fi
+done
 
-if [ -f "data/users.json.backup" ]; then
-    mv data/users.json.backup data/users.json
-    log_success "users.json restaurado"
-fi
-
-# Criar diretórios necessários
+# ============ CRIAR DIRETÓRIOS NECESSÁRIOS ============
 mkdir -p logs
 mkdir -p updater/backups
 mkdir -p data/backups
+mkdir -p data/ml
 
-# Atualizar permissões
+# Atualizar permissões apenas dos scripts
 chmod +x updater/*.sh updater/*.py 2>/dev/null || true
 
-# Atualizar dependências Python
-log_info "Atualizando dependências Python..."
-if [ -d "venv" ]; then
-    ./venv/bin/pip install -r requirements.txt -q
-elif [ -d ".venv" ]; then
-    ./.venv/bin/pip install -r requirements.txt -q
+# ============ CORRIGIR PERMISSÕES DOS ARQUIVOS DE DADOS ============
+log_info "Corrigindo permissões dos arquivos de dados..."
+
+if [ -n "$SERVICE_USER" ] && [ "$SERVICE_USER" != "root" ]; then
+    # Corrigir permissões do diretório data e seus arquivos
+    if [ -d "data" ]; then
+        chown -R "${SERVICE_USER}:${SERVICE_GROUP}" data/ 2>/dev/null || sudo chown -R "${SERVICE_USER}:${SERVICE_GROUP}" data/ 2>/dev/null || log_warning "Não foi possível corrigir permissões de data/"
+        chmod -R 755 data/ 2>/dev/null || true
+        log_success "Permissões de data/ corrigidas para ${SERVICE_USER}:${SERVICE_GROUP}"
+    fi
+    
+    # Corrigir permissões do diretório logs
+    if [ -d "logs" ]; then
+        chown -R "${SERVICE_USER}:${SERVICE_GROUP}" logs/ 2>/dev/null || sudo chown -R "${SERVICE_USER}:${SERVICE_GROUP}" logs/ 2>/dev/null || log_warning "Não foi possível corrigir permissões de logs/"
+        chmod -R 755 logs/ 2>/dev/null || true
+        log_success "Permissões de logs/ corrigidas"
+    fi
+    
+    # Corrigir permissões do .env
+    if [ -f ".env" ]; then
+        chown "${SERVICE_USER}:${SERVICE_GROUP}" .env 2>/dev/null || sudo chown "${SERVICE_USER}:${SERVICE_GROUP}" .env 2>/dev/null || true
+        chmod 600 .env 2>/dev/null || true
+    fi
+else
+    log_warning "Usuário do serviço não detectado, permissões não alteradas"
 fi
 
-# Atualizar Frontend
+# ============ ATUALIZAR DEPENDÊNCIAS PYTHON ============
+log_info "Atualizando dependências Python..."
+if [ -d "venv" ]; then
+    ./venv/bin/pip install -r requirements.txt -q 2>/dev/null || log_warning "pip install falhou"
+elif [ -d ".venv" ]; then
+    ./.venv/bin/pip install -r requirements.txt -q 2>/dev/null || log_warning "pip install falhou"
+fi
+
+# ============ ATUALIZAR FRONTEND ============
 log_info "Atualizando Frontend..."
 if [ -d "frontend" ]; then
     cd frontend
@@ -151,14 +239,41 @@ if [ -d "frontend" ]; then
     cd ..
 fi
 
-# Atualizar versão local
+# ============ ATUALIZAR VERSÃO ============
 if [ -n "$LATEST_TAG" ]; then
     echo "${LATEST_TAG#v}" > VERSION
 fi
 
-# Reiniciar serviço
+# ============ VERIFICAÇÃO FINAL DE PERMISSÕES ============
+log_info "Verificação final de permissões..."
+
+# Lista de arquivos críticos que precisam ter permissão de escrita pelo serviço
+CRITICAL_FILES=(
+    "data/users.json"
+    "data/groups.json"
+    "data/permissions.json"
+    "data/semppre_acs.db"
+)
+
+for file in "${CRITICAL_FILES[@]}"; do
+    if [ -f "$file" ]; then
+        OWNER=$(stat -c '%U' "$file" 2>/dev/null)
+        if [ "$OWNER" = "root" ] && [ -n "$SERVICE_USER" ] && [ "$SERVICE_USER" != "root" ]; then
+            log_warning "$file ainda pertence a root, corrigindo..."
+            sudo chown "${SERVICE_USER}:${SERVICE_GROUP}" "$file" 2>/dev/null || log_error "Falha ao corrigir $file"
+        fi
+    fi
+done
+
+# ============ REINICIAR SERVIÇO ============
 log_info "Reiniciando serviço..."
-systemctl restart semppre-bridge 2>/dev/null || log_warning "Não foi possível reiniciar o serviço automaticamente"
+
+# Tentar diferentes nomes de serviço
+for service_name in semppre-bridge semppreacs semppreacs2 genieacs-bridge; do
+    if systemctl is-enabled "$service_name" &>/dev/null; then
+        systemctl restart "$service_name" 2>/dev/null && log_success "Serviço $service_name reiniciado" && break
+    fi
+done
 
 # Versão final
 NEW_VERSION=$(cat VERSION 2>/dev/null || echo "desconhecida")
@@ -169,6 +284,13 @@ echo "║              Atualização Concluída! ✓                      ║"
 echo "╚════════════════════════════════════════════════════════════╝"
 echo ""
 echo "  Versão instalada: $NEW_VERSION"
+echo "  Usuário do serviço: ${SERVICE_USER:-não detectado}"
+echo ""
+echo "  Arquivos preservados:"
+echo "    - .env (configurações)"
+echo "    - data/users.json (usuários)"
+echo "    - data/groups.json (grupos)"
+echo "    - data/semppre_acs.db (banco de dados)"
 echo ""
 echo "  Agora você pode usar o sistema de updates:"
 echo "    ./venv/bin/python updater/updater.py check"

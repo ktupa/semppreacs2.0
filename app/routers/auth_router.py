@@ -251,9 +251,10 @@ async def login(credentials: UserLogin):
     users[credentials.username] = user_data
     save_users(users)
     
-    # Criar token
+    # Criar token - usar group_id como role (compatibilidade com novo formato)
+    user_role = user_data.get("role") or user_data.get("group_id", "viewer")
     access_token = create_access_token(
-        data={"sub": credentials.username, "role": user_data["role"]}
+        data={"sub": credentials.username, "role": user_role}
     )
     
     return TokenResponse(
@@ -264,7 +265,7 @@ async def login(credentials: UserLogin):
             username=user_data["username"],
             email=user_data["email"],
             full_name=user_data.get("full_name"),
-            role=user_data["role"],
+            role=user_role,
             is_active=user_data["is_active"],
             created_at=user_data["created_at"],
             last_login=user_data["last_login"],
@@ -302,6 +303,7 @@ async def register(user: UserCreate, current_user: UserInDB = Depends(require_ro
         "password_hash": get_password_hash(user.password),
         "full_name": user.full_name,
         "role": user.role,
+        "group_id": user.role,  # Compatibilidade com novo formato
         "is_active": True,
         "created_at": datetime.utcnow().isoformat(),
         "last_login": None,
@@ -317,7 +319,7 @@ async def register(user: UserCreate, current_user: UserInDB = Depends(require_ro
         username=new_user["username"],
         email=new_user["email"],
         full_name=new_user["full_name"],
-        role=new_user["role"],
+        role=new_user.get("role") or new_user.get("group_id", "viewer"),
         is_active=new_user["is_active"],
         created_at=new_user["created_at"],
         last_login=new_user["last_login"],
@@ -410,7 +412,7 @@ async def list_users(current_user: UserInDB = Depends(require_role(["admin"]))):
             username=u["username"],
             email=u["email"],
             full_name=u.get("full_name"),
-            role=u["role"],
+            role=u.get("role") or u.get("group_id", "viewer"),
             is_active=u["is_active"],
             created_at=u["created_at"],
             last_login=u.get("last_login"),
@@ -465,8 +467,9 @@ async def delete_user(username: str, current_user: UserInDB = Depends(require_ro
         )
     
     # Não permite remover o último admin
-    if users[username]["role"] == "admin":
-        admin_count = sum(1 for u in users.values() if u["role"] == "admin" and u["is_active"])
+    user_role = users[username].get("role") or users[username].get("group_id", "viewer")
+    if user_role == "admin":
+        admin_count = sum(1 for u in users.values() if (u.get("role") or u.get("group_id")) == "admin" and u["is_active"])
         if admin_count <= 1:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -522,14 +525,16 @@ async def update_user(
     
     if user_update.role is not None:
         # Não permite remover o último admin
-        if user_data["role"] == "admin" and user_update.role != "admin":
-            admin_count = sum(1 for u in users.values() if u["role"] == "admin" and u["is_active"])
+        current_role = user_data.get("role") or user_data.get("group_id", "viewer")
+        if current_role == "admin" and user_update.role != "admin":
+            admin_count = sum(1 for u in users.values() if (u.get("role") or u.get("group_id")) == "admin" and u["is_active"])
             if admin_count <= 1:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Não é possível rebaixar o único administrador ativo",
                 )
         user_data["role"] = user_update.role
+        user_data["group_id"] = user_update.role  # Manter compatibilidade
     
     if user_update.is_active is not None:
         if username == current_user.username and not user_update.is_active:
@@ -549,7 +554,7 @@ async def update_user(
         username=user_data["username"],
         email=user_data["email"],
         full_name=user_data.get("full_name"),
-        role=user_data["role"],
+        role=user_data.get("role") or user_data.get("group_id", "viewer"),
         is_active=user_data["is_active"],
         created_at=user_data["created_at"],
         last_login=user_data.get("last_login"),
@@ -605,7 +610,7 @@ async def get_user(username: str, current_user: UserInDB = Depends(require_role(
         username=u["username"],
         email=u["email"],
         full_name=u.get("full_name"),
-        role=u["role"],
+        role=u.get("role") or u.get("group_id", "viewer"),
         is_active=u["is_active"],
         created_at=u["created_at"],
         last_login=u.get("last_login"),
