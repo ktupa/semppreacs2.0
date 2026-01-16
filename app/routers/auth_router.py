@@ -464,12 +464,152 @@ async def delete_user(username: str, current_user: UserInDB = Depends(require_ro
             detail="Usuário não encontrado",
         )
     
+    # Não permite remover o último admin
+    if users[username]["role"] == "admin":
+        admin_count = sum(1 for u in users.values() if u["role"] == "admin" and u["is_active"])
+        if admin_count <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Não é possível remover o único administrador ativo",
+            )
+    
     del users[username]
     save_users(users)
     
     log.info(f"Usuário {username} removido por {current_user.username}")
     
     return {"message": "Usuário removido com sucesso"}
+
+
+class UserUpdate(BaseModel):
+    """Schema para atualização de usuário."""
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = None
+    role: Optional[str] = Field(None, pattern="^(admin|operator|viewer)$")
+    is_active: Optional[bool] = None
+
+
+@router.put("/users/{username}", response_model=UserResponse)
+async def update_user(
+    username: str,
+    user_update: UserUpdate,
+    current_user: UserInDB = Depends(require_role(["admin"]))
+):
+    """
+    Atualiza dados de um usuário (apenas admin).
+    """
+    users = load_users()
+    if username not in users:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado",
+        )
+    
+    user_data = users[username]
+    
+    # Verificar email duplicado se for alterado
+    if user_update.email and user_update.email != user_data["email"]:
+        for u in users.values():
+            if u["email"] == user_update.email and u["username"] != username:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email já cadastrado",
+                )
+        user_data["email"] = user_update.email
+    
+    if user_update.full_name is not None:
+        user_data["full_name"] = user_update.full_name
+    
+    if user_update.role is not None:
+        # Não permite remover o último admin
+        if user_data["role"] == "admin" and user_update.role != "admin":
+            admin_count = sum(1 for u in users.values() if u["role"] == "admin" and u["is_active"])
+            if admin_count <= 1:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Não é possível rebaixar o único administrador ativo",
+                )
+        user_data["role"] = user_update.role
+    
+    if user_update.is_active is not None:
+        if username == current_user.username and not user_update.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Você não pode desativar sua própria conta",
+            )
+        user_data["is_active"] = user_update.is_active
+    
+    users[username] = user_data
+    save_users(users)
+    
+    log.info(f"Usuário {username} atualizado por {current_user.username}")
+    
+    return UserResponse(
+        id=user_data["id"],
+        username=user_data["username"],
+        email=user_data["email"],
+        full_name=user_data.get("full_name"),
+        role=user_data["role"],
+        is_active=user_data["is_active"],
+        created_at=user_data["created_at"],
+        last_login=user_data.get("last_login"),
+    )
+
+
+@router.post("/users/{username}/reset-password")
+async def reset_password(
+    username: str,
+    new_password: str = "123456",
+    current_user: UserInDB = Depends(require_role(["admin"]))
+):
+    """
+    Reseta a senha de um usuário (apenas admin).
+    Senha padrão: 123456 (se não especificada)
+    """
+    users = load_users()
+    if username not in users:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado",
+        )
+    
+    if len(new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Senha deve ter pelo menos 6 caracteres",
+        )
+    
+    users[username]["password_hash"] = get_password_hash(new_password)
+    save_users(users)
+    
+    log.info(f"Senha do usuário {username} resetada por {current_user.username}")
+    
+    return {"message": f"Senha do usuário {username} alterada com sucesso"}
+
+
+@router.get("/users/{username}", response_model=UserResponse)
+async def get_user(username: str, current_user: UserInDB = Depends(require_role(["admin"]))):
+    """
+    Obtém dados de um usuário específico (apenas admin).
+    """
+    users = load_users()
+    if username not in users:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Usuário não encontrado",
+        )
+    
+    u = users[username]
+    return UserResponse(
+        id=u["id"],
+        username=u["username"],
+        email=u["email"],
+        full_name=u.get("full_name"),
+        role=u["role"],
+        is_active=u["is_active"],
+        created_at=u["created_at"],
+        last_login=u.get("last_login"),
+    )
 
 
 @router.get("/verify")

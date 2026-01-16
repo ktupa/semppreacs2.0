@@ -27,6 +27,12 @@ yarn-error.log
 .env.local
 *.local
 
+# Dados de clientes (NÃO versionar - cada cliente tem os seus)
+data/users.json
+data/ml/baselines.json
+data/ml/patterns.json
+data/ml/thresholds.json
+
 # OS
 .DS_Store
 Thumbs.db

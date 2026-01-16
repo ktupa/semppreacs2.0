@@ -281,6 +281,9 @@ class SemPPREUpdater:
             # 5. Restaurar arquivos protegidos
             self._restore_protected_files(protected_files)
             
+            # 5.1 Garantir que arquivos protegidos existam (criar a partir de .example se não existir)
+            self._ensure_protected_files_exist()
+            
             # 6. Executar comandos pós-atualização
             self._run_post_update_commands()
             
@@ -306,6 +309,16 @@ class SemPPREUpdater:
             
             return False
     
+    def _ensure_protected_files_exist(self):
+        """Garante que arquivos protegidos existam, criando a partir de .example se necessário"""
+        for filepath in self.config.get('protected_files', []):
+            full_path = BASE_DIR / filepath
+            example_path = BASE_DIR / f"{filepath}.example"
+            
+            if not full_path.exists() and example_path.exists():
+                logger.info(f"Criando {filepath} a partir do exemplo")
+                shutil.copy(example_path, full_path)
+    
     def _save_protected_files(self) -> Dict[str, bytes]:
         """Salva conteúdo dos arquivos protegidos em memória"""
         protected = {}
@@ -326,16 +339,24 @@ class SemPPREUpdater:
     
     def _update_via_git(self, version: str) -> bool:
         """Atualiza via Git"""
-        # Stash de mudanças locais
+        # Marcar arquivos protegidos como assume-unchanged para o git não sobrescrever
+        for protected in self.config.get('protected_files', []):
+            self._run_command(f'git update-index --assume-unchanged "{protected}" 2>/dev/null')
+        
+        # Stash de mudanças locais (exceto arquivos protegidos que já estão marcados)
         self._run_command('git stash')
         
         # Pull das mudanças
         if version.startswith('commit-'):
             # Atualização por commit
-            success, output = self._run_command('git pull origin main')
+            success, output = self._run_command('git pull origin main --no-rebase')
         else:
             # Atualização por tag/versão
-            success, output = self._run_command(f'git checkout tags/v{version} -B main 2>/dev/null || git checkout tags/{version} -B main')
+            success, output = self._run_command(f'git fetch origin && git checkout tags/v{version} -B main 2>/dev/null || git checkout tags/{version} -B main')
+        
+        # Restaurar tracking dos arquivos protegidos
+        for protected in self.config.get('protected_files', []):
+            self._run_command(f'git update-index --no-assume-unchanged "{protected}" 2>/dev/null')
         
         if not success:
             logger.error(f"Erro no git: {output}")
