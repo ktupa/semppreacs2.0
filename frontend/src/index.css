@@ -11,6 +11,10 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
+  /* Suporte mobile */
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 a {
@@ -24,14 +28,13 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  overflow-x: hidden; /* Previne scroll horizontal em mobile */
 }
 
 h1 {
-  font-size: 3.2em;
+  font-size: clamp(1.8rem, 5vw, 3.2rem); /* Responsivo */
   line-height: 1.1;
 }
 
@@ -45,6 +48,9 @@ button {
   background-color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.25s;
+  /* Mobile touch friendly */
+  min-height: 44px;
+  min-width: 44px;
 }
 button:hover {
   border-color: #646cff;
@@ -64,5 +70,37 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+}
+
+/* === MOBILE RESPONSIVE === */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+  
+  #root {
+    padding: 1rem;
+    max-width: 100%;
+  }
+  
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  /* Inputs e selects maiores em mobile */
+  input, select, textarea {
+    min-height: 44px;
+    font-size: 16px; /* Evita zoom automático no iOS */
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    font-size: 13px;
+  }
+  
+  #root {
+    padding: 0.5rem;
   }
 }

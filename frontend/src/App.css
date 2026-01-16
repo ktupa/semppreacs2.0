@@ -30,6 +30,20 @@ body {
   margin: 0 auto;
   padding: 2rem;
   text-align: left;
+  width: 100%; /* Garante que não ultrapasse em mobile */
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  #root {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  #root {
+    padding: 0.5rem;
+  }
 }
 
 a {

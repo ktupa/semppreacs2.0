@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import Dict, Optional, Iterable, Tuple, List
 from fastapi import FastAPI, Request, HTTPException, Response, Query, Body, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app.settings import settings
 from app.proxy import stream_proxy
@@ -19,6 +21,7 @@ from app.routers.auth_router import router as auth_router  # autenticação JWT
 from app.routers.backup_router import router as backup_router  # backup e restore de configs
 from app.routers.device_params_router import router as device_params_router  # gerenciamento completo de parâmetros
 from app.routers.provisioning_router import router as provisioning_router  # auto-provisioning
+from app.routers.mobile_api_router import router as mobile_api_router  # API para aplicativo mobile
 from app.database import init_db  # inicialização do banco
 
 import base64
@@ -405,6 +408,50 @@ app.include_router(device_params_router)
 
 # registra router de auto-provisioning
 app.include_router(provisioning_router)
+
+# registra router da API Mobile
+app.include_router(mobile_api_router)
+
+# =========================
+# SERVIR FRONTEND (SPA)
+# =========================
+# Serve arquivos estáticos do frontend buildado (se existir)
+FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+
+if os.path.exists(FRONTEND_DIST) and os.path.isdir(FRONTEND_DIST):
+    log.info(f"📦 Servindo frontend estático de: {FRONTEND_DIST}")
+    
+    # Servir assets estáticos (JS, CSS, imagens, etc)
+    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="assets")
+    
+    # Catch-all para SPA - deve vir por ÚLTIMO
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """
+        Serve o index.html para todas as rotas não-API.
+        Isso permite que o React Router funcione corretamente em produção.
+        """
+        # Se for uma rota API, não interceptar
+        if full_path.startswith(("api/", "genie/", "ixc/", "diagnostico/", "config/", 
+                                "auth/", "backup/", "metrics/", "analytics/", "feeds/", 
+                                "webhooks/", "ml/", "provisioning/", "device-params/",
+                                "__debug/", "health")):
+            raise HTTPException(status_code=404, detail="Not Found")
+        
+        # Tentar servir arquivo estático se existir
+        file_path = os.path.join(FRONTEND_DIST, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        
+        # Caso contrário, servir index.html (SPA routing)
+        index_path = os.path.join(FRONTEND_DIST, "index.html")
+        if os.path.isfile(index_path):
+            return FileResponse(index_path)
+        
+        raise HTTPException(status_code=404, detail="Frontend não encontrado")
+else:
+    log.warning(f"⚠️ Frontend dist não encontrado em: {FRONTEND_DIST}")
+    log.warning("⚠️ Execute 'cd frontend && npm run build' para gerar o build de produção")
 
 # =========================
 # INICIALIZAÇÃO DO BANCO

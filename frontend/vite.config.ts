@@ -3,6 +3,18 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    outDir: "dist",
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom"],
+          chakra: ["@chakra-ui/react", "@emotion/react", "@emotion/styled"],
+        },
+      },
+    },
+  },
   server: {
     host: true,
     port: 5173,
@@ -119,11 +131,13 @@ export default defineConfig({
         secure: false,
       },
 
-      // FastAPI Device Parameters (TR-069)
-      "/devices": {
+      // FastAPI Device Parameters (TR-069) - API only, not SPA routes
+      // Apenas rotas de API de dispositivos (ex: /api/devices/xxx/params)
+      "/api/devices": {
         target: "http://127.0.0.1:8087",
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/api\/devices/, "/devices"),
       },
 
       // FastAPI Provisioning (auto-config)

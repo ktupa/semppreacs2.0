@@ -48,6 +48,11 @@ class Settings(BaseSettings):
     APP_VERSION: str = "1.2.0"
 
     # -----------------------------
+    # MOBILE API TOKEN
+    # -----------------------------
+    MOBILE_API_TOKEN: str = os.getenv("MOBILE_API_TOKEN", "semppre-mobile-dev-token-2025")
+
+    # -----------------------------
     # PÚBLICO (usado no proxy p/ X-Forwarded-*)
     # -----------------------------
     PUBLIC_SCHEME: Optional[str] = os.getenv("PUBLIC_SCHEME")  # ex: https
