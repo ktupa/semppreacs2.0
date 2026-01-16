@@ -1,0 +1,58 @@
+{
+  "uptime_seconds": {
+    "metric_name": "uptime_seconds",
+    "base_value": 1447614.573806974,
+    "current_value": 1447614.573806974,
+    "min_value": 252239.5,
+    "max_value": 1513437.0,
+    "last_updated": "2025-11-29T11:55:35.411657"
+  },
+  "tx_power_dbm": {
+    "metric_name": "tx_power_dbm",
+    "base_value": 100.0,
+    "current_value": 100.0,
+    "min_value": 50.0,
+    "max_value": 300.0,
+    "last_updated": "2025-11-29T11:55:35.411725"
+  },
+  "memory_free_kb": {
+    "metric_name": "memory_free_kb",
+    "base_value": 45043.819573420915,
+    "current_value": 45043.819573420915,
+    "min_value": 13846.857142857143,
+    "max_value": 83081.14285714286,
+    "last_updated": "2025-11-29T11:55:35.411778"
+  },
+  "memory_total_kb": {
+    "metric_name": "memory_total_kb",
+    "base_value": 70395.01646380466,
+    "current_value": 70395.01646380466,
+    "min_value": 27867.14285714286,
+    "max_value": 167202.85714285716,
+    "last_updated": "2025-11-29T11:55:35.411827"
+  },
+  "cpu_usage_pct": {
+    "metric_name": "cpu_usage_pct",
+    "base_value": 45.39438771048037,
+    "current_value": 45.39438771048037,
+    "min_value": 9.571428571428571,
+    "max_value": 57.42857142857143,
+    "last_updated": "2025-11-29T11:55:35.411874"
+  },
+  "memory_usage_pct": {
+    "metric_name": "memory_usage_pct",
+    "base_value": 76.78200407902314,
+    "current_value": 76.78200407902314,
+    "min_value": 25.910714285714285,
+    "max_value": 155.46428571428572,
+    "last_updated": "2025-11-29T11:55:35.411966"
+  },
+  "wifi_clients": {
+    "metric_name": "wifi_clients",
+    "base_value": 6.465362575159894,
+    "current_value": 6.465362575159894,
+    "min_value": 0.9375,
+    "max_value": 5.625,
+    "last_updated": "2025-11-29T11:55:35.412010"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "_id": "preset-tplink-tr181",
+  "weight": 100,
+  "channel": "bootstrap",
+  "events": {
+    "0 BOOTSTRAP": true,
+    "1 BOOT": true,
+    "2 PERIODIC": true,
+    "6 CONNECTION REQUEST": true
+  },
+  "precondition": "{\"_deviceId._OUI\":\"482254\",\"Device.DeviceInfo.Manufacturer\":{\"$exists\":true}}"
+}

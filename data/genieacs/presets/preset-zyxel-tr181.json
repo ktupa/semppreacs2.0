@@ -1,0 +1,12 @@
+{
+  "_id": "preset-zyxel-tr181",
+  "weight": 100,
+  "channel": "bootstrap",
+  "events": {
+    "0 BOOTSTRAP": true,
+    "1 BOOT": true,
+    "2 PERIODIC": true,
+    "6 CONNECTION REQUEST": true
+  },
+  "precondition": "{\"Device.DeviceInfo.Manufacturer\":{\"$regex\":\"Zyxel|ZYXEL|zyxel\"}}"
+}

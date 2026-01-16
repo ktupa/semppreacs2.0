@@ -1,0 +1,11 @@
+{
+  "_id": "preset-multi-brand-universal",
+  "weight": 50,
+  "channel": "default",
+  "events": {
+    "0 BOOTSTRAP": true,
+    "1 BOOT": true,
+    "2 PERIODIC": true
+  },
+  "precondition": "{}"
+}

@@ -1,0 +1,722 @@
+{
+  "device_profile_5712": {
+    "pattern_id": "device_profile_5712",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "TP-Link",
+      "model": "IGD",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 1743648.0,
+          "max": 1743648.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 31956.0,
+          "max": 31956.0
+        },
+        "memory_total_kb": {
+          "min": 58580.0,
+          "max": 58580.0
+        },
+        "cpu_usage_pct": {
+          "min": 2.0,
+          "max": 2.0
+        },
+        "memory_usage_pct": {
+          "min": 45.45,
+          "max": 45.45
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.192683",
+    "last_seen": "2025-11-29T11:55:35.366222",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_5639": {
+    "pattern_id": "device_profile_5639",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "TP-Link",
+      "model": "IGD",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 222928.0,
+          "max": 222928.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 31256.0,
+          "max": 31256.0
+        },
+        "memory_total_kb": {
+          "min": 58580.0,
+          "max": 58580.0
+        },
+        "cpu_usage_pct": {
+          "min": 5.0,
+          "max": 5.0
+        },
+        "memory_usage_pct": {
+          "min": 46.64,
+          "max": 46.64
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.193739",
+    "last_seen": "2025-11-29T11:55:35.369177",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_1943": {
+    "pattern_id": "device_profile_1943",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "Huawei Technologies Co., Ltd.",
+      "model": "Huawei",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 71091.0,
+          "max": 71091.0
+        },
+        "wifi_clients": {
+          "min": 2.0,
+          "max": 2.0
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.195025",
+    "last_seen": "2025-11-29T11:55:35.371160",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_0976": {
+    "pattern_id": "device_profile_0976",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "TP-Link",
+      "model": "IGD",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 69335.0,
+          "max": 69335.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 31252.0,
+          "max": 31252.0
+        },
+        "memory_total_kb": {
+          "min": 58580.0,
+          "max": 58580.0
+        },
+        "cpu_usage_pct": {
+          "min": 22.0,
+          "max": 22.0
+        },
+        "memory_usage_pct": {
+          "min": 46.65,
+          "max": 46.65
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.196356",
+    "last_seen": "2025-11-29T11:55:35.373174",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_6265": {
+    "pattern_id": "device_profile_6265",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "TP-Link",
+      "model": "IGD",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 524767.0,
+          "max": 524767.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 31152.0,
+          "max": 31152.0
+        },
+        "memory_total_kb": {
+          "min": 58580.0,
+          "max": 58580.0
+        },
+        "cpu_usage_pct": {
+          "min": 14.0,
+          "max": 14.0
+        },
+        "memory_usage_pct": {
+          "min": 46.82,
+          "max": 46.82
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.197616",
+    "last_seen": "2025-11-29T11:55:35.375149",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_4390": {
+    "pattern_id": "device_profile_4390",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "TP-Link",
+      "model": "IGD",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 425810.0,
+          "max": 425810.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 31424.0,
+          "max": 31424.0
+        },
+        "memory_total_kb": {
+          "min": 58656.0,
+          "max": 58656.0
+        },
+        "cpu_usage_pct": {
+          "min": 24.0,
+          "max": 24.0
+        },
+        "memory_usage_pct": {
+          "min": 46.43,
+          "max": 46.43
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.198745",
+    "last_seen": "2025-11-29T11:55:35.377377",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_0744": {
+    "pattern_id": "device_profile_0744",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "TP-Link",
+      "model": "IGD",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 404087.0,
+          "max": 404087.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 31604.0,
+          "max": 31604.0
+        },
+        "memory_total_kb": {
+          "min": 58580.0,
+          "max": 58580.0
+        },
+        "cpu_usage_pct": {
+          "min": 23.0,
+          "max": 23.0
+        },
+        "memory_usage_pct": {
+          "min": 46.05,
+          "max": 46.05
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.199926",
+    "last_seen": "2025-11-29T11:55:35.379372",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_8004": {
+    "pattern_id": "device_profile_8004",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "Huawei Technologies Co., Ltd.",
+      "model": "Huawei",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 1113230.0,
+          "max": 1113230.0
+        },
+        "wifi_clients": {
+          "min": 6.0,
+          "max": 6.0
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.201141",
+    "last_seen": "2025-11-29T11:55:35.381372",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_9459": {
+    "pattern_id": "device_profile_9459",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "Huawei Technologies Co., Ltd.",
+      "model": "Huawei",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 26639.0,
+          "max": 26639.0
+        },
+        "wifi_clients": {
+          "min": 0.0,
+          "max": 0.0
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.202313",
+    "last_seen": "2025-11-29T11:55:35.383327",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_6584": {
+    "pattern_id": "device_profile_6584",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "TP-Link",
+      "model": "IGD",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 546410.0,
+          "max": 546410.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 31104.0,
+          "max": 31104.0
+        },
+        "memory_total_kb": {
+          "min": 58580.0,
+          "max": 58580.0
+        },
+        "cpu_usage_pct": {
+          "min": 22.0,
+          "max": 22.0
+        },
+        "memory_usage_pct": {
+          "min": 46.9,
+          "max": 46.9
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.203585",
+    "last_seen": "2025-11-29T11:55:35.385319",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_7363": {
+    "pattern_id": "device_profile_7363",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "TP-Link",
+      "model": "IGD",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 1088602.0,
+          "max": 1088602.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 29704.0,
+          "max": 29704.0
+        },
+        "memory_total_kb": {
+          "min": 58656.0,
+          "max": 58656.0
+        },
+        "cpu_usage_pct": {
+          "min": 35.0,
+          "max": 35.0
+        },
+        "memory_usage_pct": {
+          "min": 49.36,
+          "max": 49.36
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.204902",
+    "last_seen": "2025-11-29T11:55:35.387276",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_9625": {
+    "pattern_id": "device_profile_9625",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "TP-Link",
+      "model": "IGD",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 380446.0,
+          "max": 380446.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 30564.0,
+          "max": 30564.0
+        },
+        "memory_total_kb": {
+          "min": 58656.0,
+          "max": 58656.0
+        },
+        "cpu_usage_pct": {
+          "min": 38.0,
+          "max": 38.0
+        },
+        "memory_usage_pct": {
+          "min": 47.89,
+          "max": 47.89
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.206293",
+    "last_seen": "2025-11-29T11:55:35.389285",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_8405": {
+    "pattern_id": "device_profile_8405",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "TP-Link",
+      "model": "IGD",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 1174756.0,
+          "max": 1174756.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 30904.0,
+          "max": 30904.0
+        },
+        "memory_total_kb": {
+          "min": 58656.0,
+          "max": 58656.0
+        },
+        "cpu_usage_pct": {
+          "min": 17.0,
+          "max": 17.0
+        },
+        "memory_usage_pct": {
+          "min": 47.31,
+          "max": 47.31
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.207708",
+    "last_seen": "2025-11-29T11:55:35.391436",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_8054": {
+    "pattern_id": "device_profile_8054",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "Huawei Technologies Co., Ltd.",
+      "model": "Huawei",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 444426.0,
+          "max": 444426.0
+        },
+        "wifi_clients": {
+          "min": 3.0,
+          "max": 3.0
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.209194",
+    "last_seen": "2025-11-29T11:55:35.393417",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_7611": {
+    "pattern_id": "device_profile_7611",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "ZTE",
+      "model": "H196A V9",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 18246.0,
+          "max": 18246.0
+        },
+        "wifi_clients": {
+          "min": 0.0,
+          "max": 0.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.210690",
+    "last_seen": "2025-11-29T11:55:35.395710",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_7501": {
+    "pattern_id": "device_profile_7501",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "ZTE",
+      "model": "H196A V9",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 586960.0,
+          "max": 586960.0
+        },
+        "wifi_clients": {
+          "min": 0.0,
+          "max": 0.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.212269",
+    "last_seen": "2025-11-29T11:55:35.397726",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_0052": {
+    "pattern_id": "device_profile_0052",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "TP-Link",
+      "model": "IGD",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 1448.0,
+          "max": 1448.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 31172.0,
+          "max": 31172.0
+        },
+        "memory_total_kb": {
+          "min": 58656.0,
+          "max": 58656.0
+        },
+        "cpu_usage_pct": {
+          "min": 33.0,
+          "max": 33.0
+        },
+        "memory_usage_pct": {
+          "min": 46.86,
+          "max": 46.86
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.213864",
+    "last_seen": "2025-11-29T11:55:35.399697",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_9052": {
+    "pattern_id": "device_profile_9052",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "D-LINK",
+      "model": "Router",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 12319.0,
+          "max": 12319.0
+        },
+        "wifi_clients": {
+          "min": 0.0,
+          "max": 0.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 5964.0,
+          "max": 5964.0
+        },
+        "memory_total_kb": {
+          "min": 38440.0,
+          "max": 38440.0
+        },
+        "cpu_usage_pct": {
+          "min": 1.0,
+          "max": 1.0
+        },
+        "memory_usage_pct": {
+          "min": 84.48,
+          "max": 84.48
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.215516",
+    "last_seen": "2025-11-29T11:55:35.401696",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_0210": {
+    "pattern_id": "device_profile_0210",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "D-LINK",
+      "model": "Router",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 471533.0,
+          "max": 471533.0
+        },
+        "wifi_clients": {
+          "min": 4.0,
+          "max": 4.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 8616.0,
+          "max": 8616.0
+        },
+        "memory_total_kb": {
+          "min": 38424.0,
+          "max": 38424.0
+        },
+        "cpu_usage_pct": {
+          "min": 0.0,
+          "max": 0.0
+        },
+        "memory_usage_pct": {
+          "min": 77.58,
+          "max": 77.58
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.217571",
+    "last_seen": "2025-11-29T11:55:35.403717",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  },
+  "device_profile_4067": {
+    "pattern_id": "device_profile_4067",
+    "pattern_type": "device_profile",
+    "signature": {
+      "manufacturer": "TP-Link",
+      "model": "IGD",
+      "metric_ranges": {
+        "uptime_seconds": {
+          "min": 762899.0,
+          "max": 762899.0
+        },
+        "tx_power_dbm": {
+          "min": 100.0,
+          "max": 100.0
+        },
+        "memory_free_kb": {
+          "min": 31040.0,
+          "max": 31040.0
+        },
+        "memory_total_kb": {
+          "min": 58656.0,
+          "max": 58656.0
+        },
+        "cpu_usage_pct": {
+          "min": 32.0,
+          "max": 32.0
+        },
+        "memory_usage_pct": {
+          "min": 47.08,
+          "max": 47.08
+        }
+      }
+    },
+    "first_seen": "2025-11-29T11:31:19.219410",
+    "last_seen": "2025-11-29T11:55:35.409326",
+    "occurrence_count": 3,
+    "confidence": 0.50995,
+    "associated_actions": [],
+    "outcomes": {}
+  }
+}

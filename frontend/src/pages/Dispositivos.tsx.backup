@@ -1,0 +1,861 @@
+// src/pages/Dispositivos.tsx
+import {
+  Box, Table, Thead, Tr, Th, Tbody, Td, Text, Button, TableContainer,
+  Badge, useToast, HStack, Modal, ModalOverlay, ModalContent,
+  ModalHeader, ModalBody, ModalFooter, useDisclosure, Input, Select, VStack,
+  IconButton, Tooltip, Checkbox, Flex, Spacer, Tag, TagLabel, TagCloseButton,
+  Menu, MenuButton, MenuList, MenuItem, Divider, Skeleton, Kbd,
+  Stat, StatLabel, StatNumber, StatHelpText, SimpleGrid
+} from "@chakra-ui/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  getDevices, getDevicesMinimal, deleteDevice, createTask,
+  addTag, deleteTag, getFiles, uploadFile,
+  pingCustom, refreshCPE
+} from "../services/genieAcsApi";
+import { useNavigate } from "react-router-dom";
+import { ChevronDownIcon, RepeatIcon, SettingsIcon } from "@chakra-ui/icons";
+
+// =========================
+// Tipos
+// =========================
+interface CPE {
+  _id: string;
+  _lastInform?: string | null;
+  _tags?: string[];
+  _deviceId: {
+    _SerialNumber: string;
+    _Manufacturer: string;
+    _ProductClass: string;
+  };
+  InternetGatewayDevice?: any;
+  _online?: boolean;
+}
+
+type SortKey =
+  | "login" | "serial" | "fabricante" | "modelo"
+  | "firmware" | "tag" | "online" | "ultimoInform" | "ip" | "ssid" | "tipo";
+
+// =========================
+// Utils
+// =========================
+function isOnlineFromInform(lastInform?: string | null, mins = 10): boolean {
+  if (!lastInform) return false;
+  const last = new Date(lastInform).getTime();
+  return (Date.now() - last) / 60000 < mins;
+}
+
+function timeAgo(date?: string | null): string {
+  if (!date) return "-";
+  const d = new Date(date).getTime();
+  const diff = Math.max(0, Date.now() - d);
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "agora";
+  if (mins < 60) return `${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} h`;
+  const days = Math.floor(hours / 24);
+  return `${days} d`;
+}
+
+function gv(obj: any, path: string[], fb: any = "-"): any {
+  try {
+    const v = path.reduce((a, k) => a?.[k], obj);
+    if (v === undefined || v === null) return fb;
+    if (typeof v === 'object' && '_value' in v) return v._value ?? fb;
+    if (typeof v === 'object') return v;
+    return v ?? fb;
+  } catch { return fb; }
+}
+
+const PING_AVG_RE = /=\s*([\d.]+)\/([\d.]+)\/([\d.]+)\//;
+
+function CellEllipsed({
+  value,
+  maxW = "280px",
+  bold = false,
+  color = "white",
+}: { value: string; maxW?: string; bold?: boolean; color?: string }) {
+  return (
+    <Tooltip label={value} hasArrow>
+      <Text
+        color={color}
+        fontWeight={bold ? "semibold" : "normal"}
+        noOfLines={1}
+        title={value}
+        fontSize="sm"
+        maxW={maxW}
+      >
+        {value || "-"}
+      </Text>
+    </Tooltip>
+  );
+}
+
+// Heurística de tipo (router x onu/bridge)
+function detectTipo(cpe: CPE): "ROUTER" | "ONU/BRIDGE" | "DESCONHECIDO" {
+  const igd = cpe?.InternetGatewayDevice || {};
+  const hasPPPUser = !!gv(igd, ["WANDevice","1","WANConnectionDevice","1","WANPPPConnection","1","Username"], "");
+  const hasWLAN = !!gv(igd, ["LANDevice","1","WLANConfiguration","1","SSID"], "")
+               || !!gv(igd, ["LANDevice","1","WLANConfiguration","2","SSID"], "");
+  const mfr = (cpe?._deviceId?._Manufacturer || "").toUpperCase();
+  const cls = (cpe?._deviceId?._ProductClass || "").toUpperCase();
+
+  if (hasPPPUser || hasWLAN) return "ROUTER";
+  // ONUs ZTE/Huawei costumam não ter PPP em bridge
+  if (!hasPPPUser && (mfr.includes("ZTE") || mfr.includes("HUAWEI") || cls.includes("H196") || cls.includes("HG"))) {
+    return "ONU/BRIDGE";
+  }
+  // Se não tem PPP mas tem LAN/WAN físicas, trate como bridge:
+  const hasEther = !!gv(igd, ["LANDevice","1","LANEthernetInterfaceConfig","1","Status"], "");
+  if (!hasPPPUser && hasEther) return "ONU/BRIDGE";
+
+  return "DESCONHECIDO";
+}
+
+// =========================
+// Página
+// =========================
+export default function Dispositivos() {
+  const [cpes, setCpes] = useState<CPE[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
+
+  // filtros & busca
+  const [q, setQ] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "online" | "offline">("all");
+  const [fabricanteFilter, setFabricanteFilter] = useState<string>("all");
+  const [modeloFilter, setModeloFilter] = useState<string>("all");
+  const [tagFilter, setTagFilter] = useState<string>("all");
+  const [tipoFilter, setTipoFilter] = useState<"all" | "router" | "onu">("all");
+
+  // ordenação
+  const [sortKey, setSortKey] = useState<SortKey>("online");
+  const [sortAsc, setSortAsc] = useState(false);
+
+  // paginação
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
+  // densidade
+  const [dense, setDense] = useState(true);
+
+  // colunas
+  const [cols, setCols] = useState<Record<string, boolean>>({
+    login: true, serial: true, fabricante: true, modelo: true,
+    firmware: true, tag: true, tipo: true, status: true, ultimo: true, ip: true, ssid: true, acoes: true,
+  });
+
+  // modais
+  const {
+    isOpen: isPushOpen, onOpen: onPushOpen, onClose: onPushClose,
+  } = useDisclosure();
+  const {
+    isOpen: isTagOpen, onOpen: onTagOpen, onClose: onTagClose,
+  } = useDisclosure();
+
+  // push/tag state
+  const [tagValue, setTagValue] = useState("");
+  const [files, setFiles] = useState<string[]>([]);
+  const [selectedFile, setSelectedFile] = useState("");
+  const [uploadFileData, setUploadFileData] = useState<File | null>(null);
+
+  // auto refresh
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const intervalRef = useRef<number | null>(null);
+
+  const toast = useToast();
+  const navigate = useNavigate();
+
+  // Paleta
+  const pageBg   = "#0e1116";
+  const cardBg   = "gray.900";
+  const headBg   = "gray.800";
+  const rowOdd   = "rgba(255,255,255,.03)";
+  const rowEven  = "rgba(255,255,255,.00)";
+  const rowHover = "rgba(255,255,255,.08)";
+  const textDim  = "whiteAlpha.800";
+  const textBold = "white";
+  const textBase = "white";
+
+  // Cache key para localStorage
+  const CACHE_KEY = "semppre_devices_cache";
+  const CACHE_TTL = 30000; // 30 segundos de cache
+
+  // Carregar cache imediatamente para mostrar dados antigos enquanto atualiza
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        // Usar cache se tiver menos de 5 minutos
+        if (Date.now() - timestamp < 300000 && Array.isArray(data)) {
+          setCpes(data.map((d: any) => ({ 
+            ...d, 
+            _online: isOnlineFromInform(d._lastInform) 
+          })));
+          // Se cache muito antigo, mostrar loading para refresh
+          if (Date.now() - timestamp > CACHE_TTL) {
+            setLoading(true);
+          } else {
+            setLoading(false);
+          }
+        }
+      }
+    } catch { /* ignorar erro de cache */ }
+  }, []);
+
+  // Fetch - usa projection otimizada para listagem rápida
+  const fetch = async (forceFullData = false) => {
+    try {
+      // Só mostrar loading se não tiver dados
+      if (cpes.length === 0) setLoading(true);
+      
+      // Usa busca otimizada com campos mínimos (muito mais rápido)
+      const data = forceFullData ? await getDevices() : await getDevicesMinimal();
+      
+      // Salvar no cache
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ 
+          data, 
+          timestamp: Date.now() 
+        }));
+      } catch { /* ignorar erro de cache */ }
+      
+      // Determina status online baseado apenas em lastInform (sem ping)
+      setCpes(data.map(d => ({ 
+        ...d, 
+        _online: isOnlineFromInform(d._lastInform) 
+      })));
+    } catch {
+      toast({ status: "error", title: "Erro ao buscar dispositivos" });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Fetch inicial apenas se cache vazio ou muito antigo
+  useEffect(() => {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try {
+        const { timestamp } = JSON.parse(cached);
+        // Se cache recente, delay o fetch inicial
+        if (Date.now() - timestamp < CACHE_TTL) {
+          const timeout = setTimeout(() => fetch(), CACHE_TTL - (Date.now() - timestamp));
+          return () => clearTimeout(timeout);
+        }
+      } catch { /* ignorar */ }
+    }
+    fetch();
+  }, []);
+
+  // Status online baseado em lastInform (< 10 min = online)
+  // Ping removido por ser muito lento na listagem - disponível via botão individual
+
+  // Auto-refresh - intervalo de 30s (antes era 60s mas com cache local)
+  useEffect(() => {
+    if (!autoRefresh) {
+      if (intervalRef.current) { window.clearInterval(intervalRef.current); intervalRef.current = null; }
+      return;
+    }
+    // Refresh a cada 30s - mais responsivo com a otimização de projection
+    intervalRef.current = window.setInterval(() => fetch(), 30000) as unknown as number;
+    return () => { if (intervalRef.current) window.clearInterval(intervalRef.current); };
+  }, [autoRefresh]);
+
+  // Enriquecimento
+  const rows = useMemo(() => {
+    return cpes.map((cpe) => {
+      const igd = cpe?.InternetGatewayDevice || {};
+      const login = gv(igd, ["WANDevice","1","WANConnectionDevice","1","WANPPPConnection","1","Username"], "-");
+      const ip = gv(igd, ["WANDevice","1","WANConnectionDevice","1","WANPPPConnection","1","ExternalIPAddress"], "")
+              || gv(igd, ["WANDevice","1","WANConnectionDevice","1","WANIPConnection","1","ExternalIPAddress"], "-");
+      const ssid =
+        gv(igd, ["LANDevice","1","WLANConfiguration","1","SSID"], "") ||
+        gv(igd, ["LANDevice","1","WLANConfiguration","2","SSID"], "-");
+      const firmware =
+        gv(igd, ["DeviceInfo","SoftwareVersion"], "") ||
+        gv(igd, ["DeviceInfo","FirmwareVersion"], "-");
+
+      const tag = cpe._tags?.[0] || "-";
+      const online = cpe._online ?? isOnlineFromInform(cpe._lastInform);
+      const ultimo = cpe._lastInform || null;
+      const fabricante = cpe._deviceId?._Manufacturer || "-";
+      const modelo = cpe._deviceId?._ProductClass || "-";
+      const serial = cpe._deviceId?._SerialNumber || "-";
+      const tipo = detectTipo(cpe);
+
+      return { cpe, id: cpe._id, login, ip: ip || "-", ssid, firmware, tag, online, ultimo, fabricante, modelo, serial, tipo };
+    });
+  }, [cpes]);
+
+  type Row = (typeof rows)[number];
+
+  const fabricantes = useMemo(
+    () => ["all", ...Array.from(new Set(rows.map(r => r.fabricante).filter(Boolean)))],
+    [rows]
+  );
+  const modelos = useMemo(
+    () => ["all", ...Array.from(new Set(rows.map(r => r.modelo).filter(Boolean)))],
+    [rows]
+  );
+  const tags = useMemo(
+    () => ["all", ...Array.from(new Set(rows.map(r => r.tag).filter(t => t && t !== "-")))],
+    [rows]
+  );
+
+  const filtered = useMemo(() => {
+    const qNorm = q.trim().toLowerCase();
+    return rows.filter(r => {
+      if (statusFilter !== "all" && ((statusFilter === "online") !== r.online)) return false;
+      if (tipoFilter !== "all") {
+        const want = tipoFilter === "router" ? "ROUTER" : "ONU/BRIDGE";
+        if (r.tipo !== want) return false;
+      }
+      if (fabricanteFilter !== "all" && r.fabricante !== fabricanteFilter) return false;
+      if (modeloFilter !== "all" && r.modelo !== modeloFilter) return false;
+      if (tagFilter !== "all" && r.tag !== tagFilter) return false;
+      if (!qNorm) return true;
+      const blob = `${r.login} ${r.serial} ${r.fabricante} ${r.modelo} ${r.firmware} ${r.tag} ${r.ip} ${r.ssid} ${r.tipo}`.toLowerCase();
+      return blob.includes(qNorm);
+    });
+  }, [rows, q, statusFilter, fabricanteFilter, modeloFilter, tagFilter, tipoFilter]);
+
+  const sorted = useMemo(() => {
+    const data = [...filtered];
+    const dir = sortAsc ? 1 : -1;
+    data.sort((a, b) => {
+      const val = (k: SortKey, obj: any) => {
+        switch (k) {
+          case "online": return obj.online ? 1 : 0;
+          case "ultimoInform": return new Date(obj.ultimo ?? 0).getTime();
+          case "login": return (obj.login || "").toLowerCase();
+          case "serial": return (obj.serial || "").toLowerCase();
+          case "fabricante": return (obj.fabricante || "").toLowerCase();
+          case "modelo": return (obj.modelo || "").toLowerCase();
+          case "firmware": return (obj.firmware || "").toLowerCase();
+          case "tag": return (obj.tag || "").toLowerCase();
+          case "ip": return String(obj.ip || "");
+          case "ssid": return String(obj.ssid || "");
+          case "tipo": return (obj.tipo || "").toLowerCase();
+        }
+      };
+      const va = val(sortKey, a);
+      const vb = val(sortKey, b);
+      return (va < vb ? -1 : va > vb ? 1 : 0) * dir;
+    });
+    return data;
+  }, [filtered, sortKey, sortAsc]);
+
+  // Estatísticas da frota para IA
+  const fleetStats = useMemo(() => {
+    const total = rows.length;
+    const online = rows.filter(r => r.online).length;
+    const offline = total - online;
+    
+    const byManufacturer: Record<string, number> = {};
+    const byModel: Record<string, number> = {};
+    
+    rows.forEach(r => {
+      const fab = r.fabricante || 'Desconhecido';
+      const mod = r.modelo || 'Desconhecido';
+      byManufacturer[fab] = (byManufacturer[fab] || 0) + 1;
+      byModel[mod] = (byModel[mod] || 0) + 1;
+    });
+    
+    return {
+      total,
+      online,
+      offline,
+      warning: 0,
+      byManufacturer,
+      byModel,
+    };
+  }, [rows]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  const pageData = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, page, pageSize]);
+
+  useEffect(() => { setPage(1); }, [q, statusFilter, fabricanteFilter, modeloFilter, tagFilter, tipoFilter, pageSize]);
+
+  // Ações
+  const executarTask = async (deviceId: string, name: string, params?: any) => {
+    try {
+      await createTask(deviceId, { name, ...params }, true);
+      toast({ status: "success", title: `Comando ${name} enviado` });
+    } catch {
+      toast({ status: "error", title: `Erro ao executar ${name}` });
+    }
+  };
+
+  const abrirModalTag = (id: string, tagAtual?: string) => {
+    setSelectedDevice(id);
+    setTagValue(tagAtual || "");
+    onTagOpen();
+  };
+
+  const enviarTag = async () => {
+    if (!selectedDevice || !tagValue) return;
+    try {
+      await addTag(selectedDevice, tagValue);
+      toast({ status: "success", title: `Tag adicionada: ${tagValue}` });
+      fetch();
+    } catch {
+      toast({ status: "error", title: "Erro ao adicionar tag" });
+    }
+    onTagClose();
+  };
+
+  const removerTag = async (id: string, tagAtual?: string) => {
+    try {
+      await deleteTag(id, tagAtual || "custom");
+      toast({ status: "success", title: "Tag removida" });
+      fetch();
+    } catch {
+      toast({ status: "error", title: "Erro ao remover tag" });
+    }
+  };
+
+  const abrirModalPush = async (id: string) => {
+    setSelectedDevice(id);
+    const lista = await getFiles();
+    setFiles(lista.map((f: any) => f.name));
+    onPushOpen();
+  };
+
+  const enviarPush = async () => {
+    if (!selectedDevice) return;
+    if (uploadFileData) {
+      try {
+        await uploadFile(uploadFileData.name, uploadFileData, { fileType: "1 Firmware Upgrade Image" });
+        toast({ status: "success", title: `Upload: ${uploadFileData.name}` });
+      } catch {
+        toast({ status: "error", title: "Erro no upload" });
+        return;
+      }
+    }
+    if (selectedFile) {
+      await executarTask(selectedDevice, "download", { file: selectedFile });
+    }
+    onPushClose();
+  };
+
+  const testarConectividade = async (row: Row) => {
+    const ip = row.ip && row.ip !== "-" ? String(row.ip) : "";
+    if (ip) {
+      try {
+        const r = await pingCustom(ip);
+        const m = r.stdout.match(PING_AVG_RE);
+        const avg = m ? Number(m[2]) : undefined;
+        toast({
+          status: "info",
+          title: avg !== undefined ? `Ping ${ip}: ${avg.toFixed(1)} ms (avg)` : `Ping ${ip} executado`,
+          duration: 3500,
+        });
+      } catch (e:any) {
+        toast({ status: "warning", title: `Ping falhou (${ip})`, description: String(e?.message || e) });
+      }
+    } else {
+      toast({ status: "warning", title: "Sem IPv4 para ping" });
+    }
+
+    try {
+      await refreshCPE(row.id);
+      toast({ status: "success", title: "Solicitado novo Inform/Refresh" });
+    } catch (e:any) {
+      toast({ status: "error", title: "Falha ao solicitar novo Inform", description: String(e?.message || e) });
+    } finally {
+      setTimeout(fetch, 2200);
+    }
+  };
+
+  // Painel de estatísticas da frota
+  const FleetStatsPanel = (
+    <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4} mb={4}>
+      <Stat bg={cardBg} p={4} borderRadius="lg" border="1px solid" borderColor="whiteAlpha.200">
+        <StatLabel color={textDim}>Total de Dispositivos</StatLabel>
+        <StatNumber color="cyan.400" fontSize="2xl">{fleetStats.total}</StatNumber>
+        <StatHelpText color={textDim}>
+          {Object.keys(fleetStats.byManufacturer).length} fabricantes
+        </StatHelpText>
+      </Stat>
+      <Stat bg={cardBg} p={4} borderRadius="lg" border="1px solid" borderColor="green.500">
+        <StatLabel color={textDim}>Online</StatLabel>
+        <StatNumber color="green.400" fontSize="2xl">{fleetStats.online}</StatNumber>
+        <StatHelpText color="green.300">
+          {fleetStats.total > 0 ? ((fleetStats.online / fleetStats.total) * 100).toFixed(1) : 0}% disponíveis
+        </StatHelpText>
+      </Stat>
+      <Stat bg={cardBg} p={4} borderRadius="lg" border="1px solid" borderColor="red.500">
+        <StatLabel color={textDim}>Offline</StatLabel>
+        <StatNumber color="red.400" fontSize="2xl">{fleetStats.offline}</StatNumber>
+        <StatHelpText color="red.300">
+          {fleetStats.total > 0 ? ((fleetStats.offline / fleetStats.total) * 100).toFixed(1) : 0}% indisponíveis
+        </StatHelpText>
+      </Stat>
+      <Stat bg={cardBg} p={4} borderRadius="lg" border="1px solid" borderColor="purple.500">
+        <StatLabel color={textDim}>Modelos</StatLabel>
+        <StatNumber color="purple.400" fontSize="2xl">{Object.keys(fleetStats.byModel).length}</StatNumber>
+        <StatHelpText color={textDim}>
+          diferentes configurações
+        </StatHelpText>
+      </Stat>
+    </SimpleGrid>
+  );
+
+  // Render
+  const Header = (
+    <Flex align="center" mb={4} gap={3}>
+      <Text fontSize="2xl" color={textBold} fontWeight="bold">Dispositivos</Text>
+      <Tag size="md" colorScheme="cyan" variant="solid">
+        <TagLabel>{cpes.length} itens</TagLabel>
+      </Tag>
+      <Spacer />
+      <HStack spacing={2}>
+        <Tooltip label="Auto-refresh a cada 60s">
+          <HStack spacing={2} color={textDim}>
+            <Text fontSize="sm" color={textDim}>Auto</Text>
+            <Checkbox
+              isChecked={autoRefresh}
+              onChange={(e) => setAutoRefresh(e.target.checked)}
+              colorScheme="cyan"
+            />
+          </HStack>
+        </Tooltip>
+        <Tooltip label="Densidade da tabela">
+          <HStack spacing={2} color={textDim}>
+            <Text fontSize="sm" color={textDim}>Compacta</Text>
+            <Checkbox
+              isChecked={dense}
+              onChange={(e) => setDense(e.target.checked)}
+              colorScheme="cyan"
+            />
+          </HStack>
+        </Tooltip>
+        <Tooltip label="Atualizar agora">
+          <IconButton aria-label="refresh" size="sm" icon={<RepeatIcon />} onClick={() => fetch()} />
+        </Tooltip>
+        <Menu>
+          <Tooltip label="Colunas">
+            <MenuButton as={IconButton} size="sm" icon={<SettingsIcon />} />
+          </Tooltip>
+          <MenuList bg={cardBg} borderColor="whiteAlpha.200">
+            {Object.keys(cols).map((k) => (
+              <MenuItem key={k} onClick={() => setCols(prev => ({ ...prev, [k]: !prev[k] }))}>
+                <Checkbox isChecked={cols[k]} mr={2} pointerEvents="none" /> <Text color="white">{k.toUpperCase()}</Text>
+              </MenuItem>
+            ))}
+          </MenuList>
+        </Menu>
+        <Button size="sm" colorScheme="blue">+ Novo Comando</Button>
+      </HStack>
+    </Flex>
+  );
+
+  const Filters = (
+    <Box bg={cardBg} borderRadius="lg" p={4} mb={4} border="1px solid" borderColor="whiteAlpha.200">
+      <Flex gap={3} wrap="wrap">
+        <Input
+          placeholder="Buscar por login, serial, IP, SSID..."
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          bg="blackAlpha.500"
+          _placeholder={{ color: "whiteAlpha.700" }}
+          color={textBase}
+        />
+        <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} bg="blackAlpha.500" color={textBase}>
+          <option value="all">Status (Todos)</option>
+          <option value="online">Online</option>
+          <option value="offline">Offline</option>
+        </Select>
+        <Select value={tipoFilter} onChange={(e) => setTipoFilter(e.target.value as any)} bg="blackAlpha.500" color={textBase}>
+          <option value="all">Tipo (Todos)</option>
+          <option value="router">Router</option>
+          <option value="onu">ONU/Bridge</option>
+        </Select>
+        <Select value={fabricanteFilter} onChange={(e) => setFabricanteFilter(e.target.value)} bg="blackAlpha.500" color={textBase}>
+          {fabricantes.map(f => <option key={f} value={f}>{f === "all" ? "Fabricante (Todos)" : f}</option>)}
+        </Select>
+        <Select value={modeloFilter} onChange={(e) => setModeloFilter(e.target.value)} bg="blackAlpha.500" color={textBase}>
+          {modelos.map(m => <option key={m} value={m}>{m === "all" ? "Modelo (Todos)" : m}</option>)}
+        </Select>
+        <Select value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} bg="blackAlpha.500" color={textBase}>
+          {tags.map(t => <option key={t} value={t}>{t === "all" ? "Tag (Todas)" : t}</option>)}
+        </Select>
+        <HStack>
+          <Select w="40%" value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} bg="blackAlpha.500" color={textBase}>
+            {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n}/pág</option>)}
+          </Select>
+          <Kbd>Enter</Kbd>
+          <Text fontSize="sm" color={textDim}>para abrir detalhes da linha</Text>
+        </HStack>
+      </Flex>
+
+      {(statusFilter !== "all" || fabricanteFilter !== "all" || modeloFilter !== "all" || tagFilter !== "all" || tipoFilter !== "all" || q) && (
+        <HStack mt={3} spacing={2}>
+          <Text fontSize="sm" color={textDim}>Filtros ativos:</Text>
+          {q && <Tag><TagLabel>q: {q}</TagLabel><TagCloseButton onClick={() => setQ("")} /></Tag>}
+          {statusFilter !== "all" && <Tag colorScheme="green"><TagLabel>{statusFilter}</TagLabel><TagCloseButton onClick={() => setStatusFilter("all")} /></Tag>}
+          {tipoFilter !== "all" && <Tag colorScheme="purple"><TagLabel>{tipoFilter}</TagLabel><TagCloseButton onClick={() => setTipoFilter("all")} /></Tag>}
+          {fabricanteFilter !== "all" && <Tag colorScheme="blue"><TagLabel>{fabricanteFilter}</TagLabel><TagCloseButton onClick={() => setFabricanteFilter("all")} /></Tag>}
+          {modeloFilter !== "all" && <Tag colorScheme="purple"><TagLabel>{modeloFilter}</TagLabel><TagCloseButton onClick={() => setModeloFilter("all")} /></Tag>}
+          {tagFilter !== "all" && <Tag colorScheme="cyan"><TagLabel>{tagFilter}</TagLabel><TagCloseButton onClick={() => setTagFilter("all")} /></Tag>}
+        </HStack>
+      )}
+    </Box>
+  );
+
+  const BulkBar = (
+    <Flex bg="blackAlpha.600" borderRadius="md" p={2} mb={3} align="center" gap={3} display={selectedIds.size ? "flex" : "none"}>
+      <Text color="cyan.300" fontWeight="bold">{selectedIds.size} selecionado(s)</Text>
+      <Button size="sm" colorScheme="green" onClick={() => Promise.all(Array.from(selectedIds).map(id => executarTask(id, "reboot"))).then(() => fetch())}>Reboot</Button>
+      <Button size="sm" colorScheme="orange" onClick={() => Promise.all(Array.from(selectedIds).map(id => executarTask(id, "factoryReset"))).then(() => fetch())}>Reset</Button>
+      <Button size="sm" colorScheme="red" variant="outline" onClick={() => Promise.all(Array.from(selectedIds).map(id => deleteDevice(id))).then(() => fetch())}>Delete</Button>
+      <Spacer />
+      <Button size="sm" onClick={() => setSelectedIds(new Set())}>Limpar seleção</Button>
+    </Flex>
+  );
+
+  const SortableTh = ({ label, k }: { label: string; k: SortKey }) => (
+    <Th
+      color="white"
+      fontSize="xs"
+      letterSpacing="wide"
+      textTransform="uppercase"
+      bg={headBg}
+      borderColor="whiteAlpha.200"
+      cursor="pointer"
+      onClick={() => {
+        if (sortKey === k) setSortAsc(!sortAsc);
+        else { setSortKey(k); setSortAsc(true); }
+      }}
+    >
+      <HStack spacing={1}>
+        <Text>{label}</Text>
+        <ChevronDownIcon
+          transform={sortKey === k ? (sortAsc ? "rotate(180deg)" : "none") : "rotate(-90deg)"}
+          transition="0.15s"
+        />
+      </HStack>
+    </Th>
+  );
+
+  return (
+    <Box p={6} bg={pageBg} borderRadius="md" color={textBase}>
+      {Header}
+      {FleetStatsPanel}
+      
+      {Filters}
+      {BulkBar}
+
+      <TableContainer
+        bg={cardBg}
+        borderRadius="lg"
+        p={0}
+        overflow="auto"
+        maxH="70vh"
+        border="1px solid"
+        borderColor="whiteAlpha.200"
+      >
+        <Table variant="simple" size={dense ? "sm" : "md"}>
+          <Thead position="sticky" top={0} zIndex={1}>
+            <Tr>
+              <Th color="white" w="36px" bg={headBg} borderColor="whiteAlpha.200">
+                <Checkbox
+                  isChecked={pageData.length > 0 && pageData.every(r => selectedIds.has(r.id))}
+                  isIndeterminate={pageData.some(r => selectedIds.has(r.id)) && !pageData.every(r => selectedIds.has(r.id))}
+                  onChange={(e) => {
+                    if (e.target.checked) setSelectedIds(new Set(pageData.map(r => r.id)));
+                    else setSelectedIds(new Set());
+                  }}
+                  colorScheme="cyan"
+                />
+              </Th>
+              {cols.login && <SortableTh label="Login" k="login" />}
+              {cols.serial && <SortableTh label="Serial" k="serial" />}
+              {cols.fabricante && <SortableTh label="Fabricante" k="fabricante" />}
+              {cols.modelo && <SortableTh label="Modelo" k="modelo" />}
+              {cols.firmware && <SortableTh label="Versão" k="firmware" />}
+              {cols.tag && <SortableTh label="Tag" k="tag" />}
+              {cols.tipo && <SortableTh label="Tipo" k="tipo" />}
+              {cols.status && <SortableTh label="Status" k="online" />}
+              {cols.ultimo && <SortableTh label="Último Inform" k="ultimoInform" />}
+              {cols.ip && <SortableTh label="IPv4" k="ip" />}
+              {cols.ssid && <SortableTh label="SSID" k="ssid" />}
+              {cols.acoes && <Th color="white" bg={headBg} borderColor="whiteAlpha.200">Ações</Th>}
+            </Tr>
+          </Thead>
+
+          <Tbody>
+            {loading ? (
+              Array.from({ length: 8 }).map((_, i) => (
+                <Tr key={`sk-${i}`}><Td colSpan={13}><Skeleton h="28px" /></Td></Tr>
+              ))
+            ) : pageData.length === 0 ? (
+              <Tr>
+                <Td colSpan={13}>
+                  <Flex align="center" justify="center" p={10} direction="column" gap={2}>
+                    <Text color={textDim}>Nenhum dispositivo encontrado com os filtros atuais.</Text>
+                    <Button size="sm" onClick={() => {
+                      setQ(""); setStatusFilter("all"); setFabricanteFilter("all");
+                      setModeloFilter("all"); setTagFilter("all"); setTipoFilter("all");
+                    }}>
+                      Limpar filtros
+                    </Button>
+                  </Flex>
+                </Td>
+              </Tr>
+            ) : (
+              pageData.map((r, idx) => (
+                <Tr
+                  key={r.id}
+                  _hover={{ bg: rowHover, cursor: "pointer" }}
+                  bg={idx % 2 === 0 ? rowEven : rowOdd}
+                  onDoubleClick={() => navigate(`/devices/${encodeURIComponent(r.id)}`)}
+                  sx={{ "& > td": { py: dense ? 2 : 3, borderColor: "whiteAlpha.150" } }}
+                >
+                  <Td onClick={(e) => e.stopPropagation()}>
+                    <Checkbox
+                      isChecked={selectedIds.has(r.id)}
+                      onChange={(e) => {
+                        const ns = new Set(selectedIds);
+                        if (e.target.checked) ns.add(r.id); else ns.delete(r.id);
+                        setSelectedIds(ns);
+                      }}
+                      colorScheme="cyan"
+                    />
+                  </Td>
+
+                  {cols.login && <Td><CellEllipsed value={r.login} maxW="320px" bold color={textBold} /></Td>}
+                  {cols.serial && <Td><Text color={textBold} fontSize="sm">{r.serial}</Text></Td>}
+                  {cols.fabricante && <Td><Text color={textBold} fontSize="sm">{r.fabricante}</Text></Td>}
+                  {cols.modelo && <Td><Text color={textBold} fontSize="sm">{r.modelo}</Text></Td>}
+                  {cols.firmware && <Td><Text color={textBold} fontSize="sm">{r.firmware}</Text></Td>}
+                  {cols.tag && (
+                    <Td>
+                      {r.tag !== "-" ? (
+                        <Badge variant="solid" colorScheme="cyan">{r.tag}</Badge>
+                      ) : <Text color={textDim}>-</Text>}
+                    </Td>
+                  )}
+                  {cols.tipo && (
+                    <Td>
+                      <Badge colorScheme={r.tipo === "ROUTER" ? "green" : (r.tipo === "ONU/BRIDGE" ? "purple" : "gray")}>
+                        {r.tipo}
+                      </Badge>
+                    </Td>
+                  )}
+                  {cols.status && (
+                    <Td>
+                      <HStack>
+                        <Box as="span" boxSize="9px" borderRadius="full" bg={r.online ? "green.400" : "red.400"} />
+                        <Badge variant="solid" colorScheme={r.online ? "green" : "red"}>
+                          {r.online ? "ONLINE" : "OFFLINE"}
+                        </Badge>
+                      </HStack>
+                    </Td>
+                  )}
+                  {cols.ultimo && (
+                    <Td>
+                      <Tooltip label={r.ultimo || "-"}><Text color={textDim}>{timeAgo(r.ultimo)}</Text></Tooltip>
+                    </Td>
+                  )}
+                  {cols.ip && <Td><Text color={textBold} fontSize="sm">{r.ip}</Text></Td>}
+                  {cols.ssid && <Td><CellEllipsed value={r.ssid} maxW="220px" color={textBase} /></Td>}
+
+                  {cols.acoes && (
+                    <Td onClick={(e) => e.stopPropagation()}>
+                      <HStack spacing={2}>
+                        <Button size="xs" colorScheme="blue" onClick={() => navigate(`/devices/${encodeURIComponent(r.id)}`)}>Ver</Button>
+                        <Button size="xs" variant="outline" colorScheme="blue" onClick={() => testarConectividade(r)}>
+                          Atualizar
+                        </Button>
+                        <Button size="xs" colorScheme="green" onClick={() => executarTask(r.id, "reboot")}>Reboot</Button>
+                        <Button size="xs" colorScheme="orange" onClick={() => executarTask(r.id, "factoryReset")}>Reset</Button>
+                        <Menu>
+                          <MenuButton as={Button} size="xs" rightIcon={<ChevronDownIcon />}>Mais</MenuButton>
+                          <MenuList bg={cardBg} borderColor="whiteAlpha.200">
+                            <MenuItem onClick={() => abrirModalPush(r.id)}><Text color="white">Push File</Text></MenuItem>
+                            <MenuItem onClick={() => abrirModalTag(r.id, r.tag)}><Text color="white">Tag/Untag</Text></MenuItem>
+                            <Divider />
+                            <MenuItem color="red.300" onClick={() => deleteDevice(r.id)}>Delete</MenuItem>
+                          </MenuList>
+                        </Menu>
+                      </HStack>
+                    </Td>
+                  )}
+                </Tr>
+              ))
+            )}
+          </Tbody>
+        </Table>
+      </TableContainer>
+
+      {/* paginação */}
+      <Flex align="center" justify="space-between" mt={3}>
+        <Text color={textDim} fontSize="sm">
+          Página {page} de {totalPages} • {sorted.length} itens filtrados
+        </Text>
+        <HStack>
+          <Button size="sm" onClick={() => setPage(1)} isDisabled={page === 1}>«</Button>
+          <Button size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} isDisabled={page === 1}>Anterior</Button>
+          <Button size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} isDisabled={page === totalPages}>Próxima</Button>
+          <Button size="sm" onClick={() => setPage(totalPages)} isDisabled={page === totalPages}>»</Button>
+        </HStack>
+      </Flex>
+
+      {/* Modal Tag */}
+      <Modal isOpen={isTagOpen} onClose={onTagClose}>
+        <ModalOverlay />
+        <ModalContent bg={cardBg} color="white" borderColor="whiteAlpha.200">
+          <ModalHeader>Adicionar/Remover Tag</ModalHeader>
+          <ModalBody>
+            <VStack spacing={3} align="stretch">
+              <Input placeholder="Digite a tag/comentário" value={tagValue} onChange={(e) => setTagValue(e.target.value)} />
+              <Button onClick={enviarTag} colorScheme="blue">Salvar tag</Button>
+              <Divider />
+              <Button variant="outline" colorScheme="red" onClick={() => { if (selectedDevice) removerTag(selectedDevice, tagValue || undefined); onTagClose(); }}>
+                Remover tag atual
+              </Button>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={onTagClose}>Fechar</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* Modal Push File */}
+      <Modal isOpen={isPushOpen} onClose={onPushClose}>
+        <ModalOverlay />
+        <ModalContent bg={cardBg} color="white" borderColor="whiteAlpha.200">
+          <ModalHeader>Push File</ModalHeader>
+          <ModalBody>
+            <VStack spacing={3} align="stretch">
+              <Select placeholder="Selecione um arquivo" onChange={(e) => setSelectedFile(e.target.value)} bg="blackAlpha.500">
+                {files.map((f) => <option key={f} value={f}>{f}</option>)}
+              </Select>
+              <Text fontSize="sm" color={textDim}>Ou envie um novo arquivo:</Text>
+              <Input type="file" onChange={(e) => { if (e.target.files?.[0]) setUploadFileData(e.target.files[0]); }} />
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="green" mr={3} onClick={enviarPush}>Enviar</Button>
+            <Button onClick={onPushClose}>Cancelar</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* estilos */}
+      <style>{`
+        :root { color-scheme: dark; }
+        option { color: #000; }
+      `}</style>
+    </Box>
+  );
+}

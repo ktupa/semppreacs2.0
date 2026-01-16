@@ -1,0 +1,94 @@
+/* src/index.css */
+
+:root {
+  --color-bg: #0f172a;         /* Fundo geral (cinza escuro/azul petróleo) */
+  --color-surface: #1e293b;    /* Cards e containers */
+  --color-accent: #3b82f6;     /* Azul principal (botões, links) */
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --color-muted: #94a3b8;
+  --color-white: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-white);
+  line-height: 1.6;
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: left;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: 0.3s;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Logo Animada */
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  transition: filter 0.3s ease-in-out;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 0 1em var(--color-accent));
+}
+
+.logo.react:hover {
+  filter: drop-shadow(0 0 1em #61dafb);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .logo.animated {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+/* Card padrão (caso use fora do Chakra) */
+.card {
+  background-color: var(--color-surface);
+  padding: 2rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Texto de instrução */
+.read-the-docs {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  margin-top: 1rem;
+}

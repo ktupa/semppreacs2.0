@@ -1,0 +1,504 @@
+// src/pages/DispositivoDashboard.tsx
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  Box, SimpleGrid, useToast, Heading, HStack, Text, Icon, Badge, VStack, Divider,
+  GridItem, Tooltip, Tag, TagLabel, Tabs, TabList, TabPanels, Tab, TabPanel, Kbd,
+  Wrap, WrapItem, Stack, Flex, Skeleton, SkeletonText, Code, useColorModeValue
+} from "@chakra-ui/react";
+import { useParams } from "react-router-dom";
+import { getDeviceById } from "../services/genieAcsApi";
+import { FaWifi } from "react-icons/fa";
+import { MdOutlineSpeed, MdOutlineSecurity } from "react-icons/md";
+
+import PingChart from "../components/PingChart";
+import DiagnosticoStatus from "../components/DiagnosticoStatus";
+import WifiConfigDualBand from "../components/WifiConfigDualBand";
+import WifiTopology from "../components/WifiTopology";
+import LanConfig from "../components/LanConfig";
+import LanTopology from "../components/LanTopology";
+import FirewallPortas from "../components/FirewallPortas";
+import DispositivosConectados from "../components/DispositivosConectados";
+import TesteConectividade from "../components/TesteConectividade";
+import ClienteIXCEnhanced from "../components/ClienteIXCEnhanced";
+import WanStatus from "../components/WanStatus";
+import DeviceHistory from "../components/DeviceHistory";
+import ParametersEditor from "../components/ParametersEditor";
+import QuickConfig from "../components/QuickConfig";
+
+// ---------- Helpers UI ----------
+function Card({
+  title, right, children,
+}: { title: string; right?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <Box
+      bg="gray.800"
+      border="1px solid"
+      borderColor="whiteAlpha.200"
+      rounded="xl"
+      p={4}
+      _hover={{ borderColor: "whiteAlpha.300" }}
+    >
+      <HStack justify="space-between" mb={3}>
+        <Heading size="sm" color="whiteAlpha.900">{title}</Heading>
+        {right}
+      </HStack>
+      {children}
+    </Box>
+  );
+}
+
+function KV({ k, v }: { k: string; v: React.ReactNode }) {
+  // Garantir que o valor seja renderizável (não um objeto)
+  const safeValue = (() => {
+    if (v === null || v === undefined) return "—";
+    if (typeof v === 'object' && !React.isValidElement(v)) {
+      // Se for objeto com _value, extrair
+      if ('_value' in (v as any)) return String((v as any)._value ?? "—");
+      // Objeto não renderizável
+      return "—";
+    }
+    return v;
+  })();
+  
+  return (
+    <HStack justify="space-between" py={1} align="start" spacing={3}>
+      <Text color="whiteAlpha.700" fontSize="sm">{k}</Text>
+      <Text
+        color="white"
+        fontWeight="semibold"
+        fontSize="sm"
+        maxW="65%"
+        noOfLines={1}
+        textAlign="right"
+      >
+        {safeValue}
+      </Text>
+    </HStack>
+  );
+}
+
+// helper seguro para ler caminhos TR-098/TR-181 com _value
+// Se o path aponta para um valor (objeto com _value), extrai o _value
+// Se o path aponta para um container (objeto sem _value), retorna o container
+function get(o: any, path: string, fb?: any): any {
+  try {
+    const raw = path.split(".").reduce((a: any, k: string) => a?.[k], o);
+    if (raw === undefined || raw === null) return fb;
+    
+    // Se for objeto com _value, extrair o valor
+    if (typeof raw === 'object' && '_value' in raw) {
+      return raw._value ?? fb;
+    }
+    
+    // Se for objeto sem _value, pode ser um container - retornar o objeto inteiro
+    // (necessário para pegar sub-paths como WANPPPConnection.1)
+    if (typeof raw === 'object') {
+      return raw;
+    }
+    
+    // Valor primitivo
+    return raw ?? fb;
+  } catch {
+    return fb;
+  }
+}
+
+export default function DispositivoDashboard() {
+  const { id } = useParams();
+  const toast = useToast();
+
+  const [device, setDevice] = useState<any | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // Cache key para este dispositivo
+  const cacheKey = `semppre_device_${id}`;
+
+  // Carregar cache imediatamente
+  useEffect(() => {
+    if (!id) return;
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached);
+        // Cache válido por 2 minutos para dispositivo individual
+        if (Date.now() - timestamp < 120000 && data) {
+          setDevice(data);
+          // Ainda carrega em background se cache > 30s
+          if (Date.now() - timestamp < 30000) {
+            setLoading(false);
+            return;
+          }
+        }
+      }
+    } catch { /* ignorar */ }
+  }, [id, cacheKey]);
+
+  // Carregar CPE
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        if (!id) return;
+        // Só mostra loading se não tem dados no cache
+        if (!device) setLoading(true);
+        
+        const data = await getDeviceById(id);
+        const deviceData = data?.[0] ?? null;
+        
+        if (active) {
+          setDevice(deviceData);
+          // Salvar no cache
+          if (deviceData) {
+            try {
+              localStorage.setItem(cacheKey, JSON.stringify({
+                data: deviceData,
+                timestamp: Date.now()
+              }));
+            } catch { /* ignorar */ }
+          }
+        }
+      } catch (err) {
+        toast({ status: "error", title: "Erro ao carregar a CPE" });
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
+  }, [id, toast, cacheKey]);
+
+  // ---------- Dados derivados ----------
+  const devId = id ?? "—";
+  const lastInform: string | undefined = device?._lastInform;
+
+  const fabricante = device?._deviceId?._Manufacturer || "—";
+  const modelo = device?._deviceId?._ProductClass || "—";
+  const serial = device?._deviceId?._SerialNumber || "—";
+  const tag = device?._tags?.[0] || null;
+
+  // PPP e IPoE (fallbacks multi-vendor: TR-098 e TR-181)
+  // TR-098 paths (TP-Link, D-Link, etc.)
+  const ppp098 = get(device, "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1", {});
+  const ipcon098 = get(device, "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1", {});
+  // TR-181 paths (Huawei, ZTE, ZYXEL, etc.)
+  const ppp181 = get(device, "Device.PPP.Interface.1", {});
+  const ipcon181 = get(device, "Device.IP.Interface.1", {});
+  
+  // Usar TR-098 com fallback para TR-181
+  const ppp = Object.keys(ppp098).length > 0 ? ppp098 : ppp181;
+  const ipcon = Object.keys(ipcon098).length > 0 ? ipcon098 : ipcon181;
+
+  // Login PPPoE: tentar TR-098 -> TR-181 -> null
+  const login: string | null = 
+    get(ppp098, "Username", null) ?? 
+    get(ppp181, "Username", null);
+
+  // IPv4 seguro: PPP -> IPoE -> undefined (para PingChart usar fallback)
+  const ipv4Raw: string | undefined =
+    get(ppp, "ExternalIPAddress", undefined) ??
+    get(ipcon, "ExternalIPAddress", undefined);
+  const ipv4Safe = ipv4Raw && ipv4Raw !== "—" ? ipv4Raw : undefined;
+
+  const dns = get(ppp, "DNSServers", get(ipcon, "DNSServers", "—"));
+
+  const ipv6State =
+    get(ppp, "X_TPLINK_IPv6Enable", get(ipcon, "X_TPLINK_IPv6Enable", false));
+
+  // SSIDs + Canal/Security (multi-vendor: TR-098 e TR-181)
+  // TR-098 paths (TP-Link, D-Link, etc.)
+  const wl1_098 = get(device, "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1", {});
+  const wl2_098 = get(device, "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2", {});
+  // TR-181 paths (Huawei, ZTE, ZYXEL, etc.)
+  const wl1_181 = get(device, "Device.WiFi.SSID.1", {});
+  const wl2_181 = get(device, "Device.WiFi.SSID.2", {});
+  const radio1_181 = get(device, "Device.WiFi.Radio.1", {});
+  const radio2_181 = get(device, "Device.WiFi.Radio.2", {});
+  
+  // Usar TR-098 com fallback para TR-181
+  const wl1 = Object.keys(wl1_098).length > 0 ? wl1_098 : wl1_181;
+  const wl2 = Object.keys(wl2_098).length > 0 ? wl2_098 : wl2_181;
+
+  const ssid2 = get(wl1, "SSID", "—");
+  const ssid5 = get(wl2, "SSID", "—");
+  const ch2   = get(wl1, "Channel", get(radio1_181, "Channel", get(wl1, "AutoChannelEnable", true) ? "Auto" : "—"));
+  const ch5   = get(wl2, "Channel", get(radio2_181, "Channel", get(wl2, "AutoChannelEnable", true) ? "Auto" : "—"));
+  const sec2  = get(wl1, "BeaconType", "WPA2");
+  const sec5  = get(wl2, "BeaconType", "WPA2");
+  const radio2 = !!get(wl1, "RadioEnabled", get(radio1_181, "Enable", true));
+  const radio5 = !!get(wl2, "RadioEnabled", get(radio2_181, "Enable", true));
+
+  // identificação
+  const ident = useMemo(() => {
+    if (login && tag) return `${login} • ${tag}`;
+    if (login) return login;
+    if (tag) return tag;
+    return devId;
+  }, [login, tag, devId]);
+
+  const isOnline = useMemo(() => {
+    if (!lastInform) return false;
+    const diffMin = (Date.now() - new Date(lastInform).getTime()) / 60000;
+    return diffMin < 10;
+  }, [lastInform]);
+
+  const headerBg = useColorModeValue("gray.800", "gray.800");
+
+  // ---------- Header ----------
+  const Header = (
+    <Box mb={6} bg={headerBg} border="1px solid" borderColor="whiteAlpha.200" rounded="xl" p={4}>
+      <HStack justify="space-between" align="center" mb={1} flexWrap="wrap">
+        <HStack spacing={3}>
+          <Icon as={FaWifi} fontSize="lg" color="cyan.300" />
+          {loading ? (
+            <Skeleton height="28px" width="240px" startColor="gray.700" endColor="gray.600" />
+          ) : (
+            <Heading size="lg" color="white">{ident}</Heading>
+          )}
+          <Badge colorScheme={isOnline ? "green" : "red"}>
+            {isOnline ? "Conectada" : "Offline"}
+          </Badge>
+        </HStack>
+        <Wrap>
+          {tag && (
+            <WrapItem>
+              <Tag colorScheme="cyan" variant="subtle">
+                <TagLabel>{tag}</TagLabel>
+              </Tag>
+            </WrapItem>
+          )}
+          <WrapItem>
+            <Badge variant="outline" colorScheme="purple">{fabricante}</Badge>
+          </WrapItem>
+          <WrapItem>
+            <Badge variant="outline" colorScheme="purple">{modelo}</Badge>
+          </WrapItem>
+          <WrapItem>
+            <Badge variant="outline" colorScheme="gray">ID: {devId}</Badge>
+          </WrapItem>
+        </Wrap>
+      </HStack>
+
+      <HStack spacing={6} mt={2} color="whiteAlpha.700" fontSize="sm" flexWrap="wrap">
+        <Text>
+          Último Inform:{" "}
+          {loading ? (
+            <Skeleton as="span" height="12px" width="160px" ml={2} />
+          ) : lastInform ? (
+            new Date(lastInform).toLocaleString()
+          ) : (
+            "—"
+          )}
+        </Text>
+        <Divider orientation="vertical" h="16px" borderColor="whiteAlpha.300" />
+        <HStack spacing={2}><Text>Serial:</Text><Code>{serial}</Code></HStack>
+      </HStack>
+    </Box>
+  );
+
+  return (
+    <Box p={6} bg="gray.900" color="white" minH="100vh">
+      {Header}
+
+      <Tabs colorScheme="cyan" variant="enclosed">
+        <TabList
+          bg="gray.800"
+          border="1px solid"
+          borderColor="whiteAlpha.200"
+          rounded="xl"
+          px={2}
+          overflowX="auto"
+        >
+          <Tab>Resumo</Tab>
+          <Tab>Conectividade</Tab>
+          <Tab>Wi-Fi</Tab>
+          <Tab>📋 Parâmetros</Tab>
+          <Tab>Cliente IXC</Tab>
+          <Tab>Histórico</Tab>
+        </TabList>
+
+        <TabPanels mt={4}>
+          {/* --------- RESUMO --------- */}
+          <TabPanel px={0}>
+            <SimpleGrid columns={{ base: 1, xl: 3 }} spacing={6}>
+              {/* Coluna 1 */}
+              <GridItem>
+                <Card title="Informações do dispositivo" right={<Icon as={MdOutlineSecurity} />}>
+                  {loading ? (
+                    <SkeletonText noOfLines={8} spacing="3" />
+                  ) : (
+                    <VStack align="stretch" spacing={1}>
+                      <KV k="Fabricante" v={fabricante} />
+                      <KV k="Modelo" v={modelo} />
+                      <KV k="Serial" v={<Code>{serial}</Code>} />
+                      <Divider my={2} borderColor="whiteAlpha.200" />
+                      <KV k="Login PPPoE" v={login || "—"} />
+                      <KV k="IPv4" v={ipv4Raw || "—"} />
+                      <KV k="DNS" v={dns} />
+                      <KV k="IPv6" v={ipv6State ? "Habilitado" : "Desabilitado"} />
+                    </VStack>
+                  )}
+                </Card>
+
+                <Box h={6} />
+
+                <Card title="Diagnósticos rápidos" right={<Icon as={MdOutlineSpeed} />}>
+                  <Text fontSize="sm" color="whiteAlpha.700" mb={2}>
+                    Execute testes comuns com 1 clique (atalho <Kbd>Enter</Kbd> nos cards).
+                  </Text>
+                  {/* TR-069: use o ID completo da CPE */}
+                  <TesteConectividade deviceId={device?._id} />
+                </Card>
+              </GridItem>
+
+              {/* Coluna 2 → WAN perfeita */}
+              <GridItem>
+                <WanStatus device={device} />
+                
+                <Box h={6} />
+                <Card title="Redes Wi-Fi (resumo)" right={<Icon as={FaWifi} />}>
+                  {loading ? (
+                    <SkeletonText noOfLines={4} spacing="3" />
+                  ) : (
+                    <Stack spacing={3}>
+                      <Box bg="blackAlpha.400" rounded="md" p={3}>
+                        <HStack justify="space-between" mb={1}>
+                          <Text fontWeight="bold">2.4 GHz</Text>
+                          <Badge colorScheme={radio2 ? "green" : "gray"}>
+                            {radio2 ? "Habilitada" : "Desabilitada"}
+                          </Badge>
+                        </HStack>
+                        <Text fontSize="sm" color="whiteAlpha.800" noOfLines={1}>
+                          SSID: {ssid2}
+                        </Text>
+                        <Text fontSize="xs" color="whiteAlpha.600">
+                          Canal: {ch2} • Segurança: {sec2}
+                        </Text>
+                      </Box>
+
+                      <Box bg="blackAlpha.400" rounded="md" p={3}>
+                        <HStack justify="space-between" mb={1}>
+                          <Text fontWeight="bold">5 GHz</Text>
+                          <Badge colorScheme={radio5 ? "green" : "gray"}>
+                            {radio5 ? "Habilitada" : "Desabilitada"}
+                          </Badge>
+                        </HStack>
+                        <Text fontSize="sm" color="whiteAlpha.800" noOfLines={1}>
+                          SSID: {ssid5}
+                        </Text>
+                        <Text fontSize="xs" color="whiteAlpha.600">
+                          Canal: {ch5} • Segurança: {sec5}
+                        </Text>
+                      </Box>
+                    </Stack>
+                  )}
+                </Card>
+              </GridItem>
+
+              {/* Coluna 3 */}
+              <GridItem>
+                <Card
+                  title="Ping em tempo real"
+                  right={
+                    <Tooltip label="Origem: servidor de diagnóstico • janela 60s">
+                      <Text fontSize="xs" color="whiteAlpha.700">β</Text>
+                    </Tooltip>
+                  }
+                >
+                  {/* Nunca passe string não-IP; se vazio, PingChart usa fallback */}
+                  <PingChart host={ipv4Safe} fallbackHosts={["8.8.8.8", "1.1.1.1"]} />
+                </Card>
+
+                <Box h={6} />
+
+                <Card title="Resumo de comandos / IA">
+                  <DiagnosticoStatus device={device} />
+                </Card>
+              </GridItem>
+            </SimpleGrid>
+          </TabPanel>
+
+          {/* --------- CONECTIVIDADE --------- */}
+          <TabPanel px={0}>
+            <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={6}>
+              <Card title="Configurações de LAN">
+                <LanConfig device={device} />
+              </Card>
+              <Card title="Firewall / Portas">
+                <FirewallPortas device={device} />
+              </Card>
+              
+              {/* Topologia LAN */}
+              <Card title="Topologia de Rede LAN">
+                <LanTopology device={device} />
+              </Card>
+              
+              {/* Dispositivos conectados detalhados */}
+              <Card title="Dispositivos Conectados (DHCP/ARP)">
+                <DispositivosConectados device={device} />
+              </Card>
+            </SimpleGrid>
+          </TabPanel>
+
+          {/* --------- WI-FI --------- */}
+          <TabPanel px={0}>
+            <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={6}>
+              {/* Configuração WiFi */}
+              <Card title="Configurações Wi-Fi (Dual Band)">
+                <WifiConfigDualBand device={device} deviceId={device?._id} />
+              </Card>
+              
+              {/* Árvore de dispositivos WiFi */}
+              <Card title="Topologia de Conexões WiFi">
+                <WifiTopology device={device} />
+              </Card>
+
+              {/* Configuração rápida dentro da aba Wi-Fi (mesma função do antigo Config) */}
+              <Card title="Configuração Rápida">
+                {device?._id ? (
+                  <QuickConfig deviceId={device._id} />
+                ) : (
+                  <Text color="gray.500">Carregando dispositivo...</Text>
+                )}
+              </Card>
+            </SimpleGrid>
+          </TabPanel>
+
+          {/* NOTE: Config tab removed (duplicate of Wi-Fi). QuickConfig is embedded in the Wi-Fi tab. */}
+
+          {/* --------- TODOS OS PARÂMETROS --------- */}
+          <TabPanel px={0}>
+            <Card title="Editor Completo de Parâmetros TR-069">
+              <Text fontSize="sm" color="whiteAlpha.700" mb={4}>
+                Visualize e edite todos os {">"}1200 parâmetros disponíveis no dispositivo via protocolo TR-069.
+                Use a busca para encontrar parâmetros específicos.
+              </Text>
+              {device?._id ? (
+                <ParametersEditor deviceId={device._id} />
+              ) : (
+                <Text color="gray.500">Carregando dispositivo...</Text>
+              )}
+            </Card>
+          </TabPanel>
+
+          {/* --------- CLIENTE IXC --------- */}
+          <TabPanel px={0}>
+            <ClienteIXCEnhanced login={login} deviceId={device?._id} />
+          </TabPanel>
+
+          {/* --------- HISTÓRICO --------- */}
+          <TabPanel px={0}>
+            <DeviceHistory deviceId={device?._id} device={device} />
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
+
+      <Flex mt={8} justify="space-between" color="whiteAlpha.500" fontSize="xs" flexWrap="wrap">
+        <Text>Semppre ACS • Dashboard do dispositivo</Text>
+        <Text>
+          Dica: clique em <Kbd>Enter</Kbd> nos cards de teste para executar rapidamente.
+        </Text>
+      </Flex>
+
+      <style>{`:root { color-scheme: dark; }`}</style>
+    </Box>
+  );
+}

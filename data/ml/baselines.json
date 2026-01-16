@@ -1,0 +1,142 @@
+{
+  "E848B8-IGD-32130A7015036": {
+    "uptime_seconds": 1743648.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 31956.0,
+    "memory_total_kb": 58580.0,
+    "cpu_usage_pct": 2.0,
+    "memory_usage_pct": 45.45
+  },
+  "3460F9-IGD-22251H2003758": {
+    "uptime_seconds": 222928.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 31256.0,
+    "memory_total_kb": 58580.0,
+    "cpu_usage_pct": 5.0,
+    "memory_usage_pct": 46.64
+  },
+  "00E0FC-Huawei-VMXQU23404603120": {
+    "uptime_seconds": 71091.0,
+    "wifi_clients": 2.0
+  },
+  "1C61B4-IGD-2227315007572": {
+    "uptime_seconds": 69335.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 31252.0,
+    "memory_total_kb": 58580.0,
+    "cpu_usage_pct": 22.0,
+    "memory_usage_pct": 46.65
+  },
+  "1C61B4-IGD-2227315000786": {
+    "uptime_seconds": 524767.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 31152.0,
+    "memory_total_kb": 58580.0,
+    "cpu_usage_pct": 14.0,
+    "memory_usage_pct": 46.82
+  },
+  "5CA6E6-IGD-321B010016329": {
+    "uptime_seconds": 425810.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 31424.0,
+    "memory_total_kb": 58656.0,
+    "cpu_usage_pct": 24.0,
+    "memory_usage_pct": 46.43
+  },
+  "1C61B4-IGD-2227315000497": {
+    "uptime_seconds": 404087.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 31604.0,
+    "memory_total_kb": 58580.0,
+    "cpu_usage_pct": 23.0,
+    "memory_usage_pct": 46.05
+  },
+  "00E0FC-Huawei-XBHQU22A06004764": {
+    "uptime_seconds": 1113230.0,
+    "wifi_clients": 6.0
+  },
+  "00E0FC-Huawei-VMXQU23404603124": {
+    "uptime_seconds": 26639.0,
+    "wifi_clients": 0.0
+  },
+  "AC15A2-IGD-22270W8005073": {
+    "uptime_seconds": 546410.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 31104.0,
+    "memory_total_kb": 58580.0,
+    "cpu_usage_pct": 22.0,
+    "memory_usage_pct": 46.9
+  },
+  "5CA6E6-IGD-321A080007151": {
+    "uptime_seconds": 1088602.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 29704.0,
+    "memory_total_kb": 58656.0,
+    "cpu_usage_pct": 35.0,
+    "memory_usage_pct": 49.36
+  },
+  "CC32E5-IGD-320A028001692": {
+    "uptime_seconds": 380446.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 30564.0,
+    "memory_total_kb": 58656.0,
+    "cpu_usage_pct": 38.0,
+    "memory_usage_pct": 47.89
+  },
+  "3460F9-IGD-22251H2003762": {
+    "uptime_seconds": 1174756.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 30904.0,
+    "memory_total_kb": 58656.0,
+    "cpu_usage_pct": 17.0,
+    "memory_usage_pct": 47.31
+  },
+  "00E0FC-Huawei-VMXQU23414603739": {
+    "uptime_seconds": 444426.0,
+    "wifi_clients": 3.0
+  },
+  "A87484-H196A%20V9-ZTEEH7VM6R04828": {
+    "uptime_seconds": 18246.0,
+    "wifi_clients": 0.0,
+    "tx_power_dbm": 100.0
+  },
+  "A87484-H196A%20V9-ZTEEH7VM6R01264": {
+    "uptime_seconds": 586960.0,
+    "wifi_clients": 0.0,
+    "tx_power_dbm": 100.0
+  },
+  "B0A7B9-IGD-3219083010869": {
+    "uptime_seconds": 1448.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 31172.0,
+    "memory_total_kb": 58656.0,
+    "cpu_usage_pct": 33.0,
+    "memory_usage_pct": 46.86
+  },
+  "BC0F9A-Router-TK19105003467": {
+    "uptime_seconds": 12319.0,
+    "wifi_clients": 0.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 5964.0,
+    "memory_total_kb": 38440.0,
+    "cpu_usage_pct": 1.0,
+    "memory_usage_pct": 84.48
+  },
+  "7898E8-Router-TK18113004525": {
+    "uptime_seconds": 471533.0,
+    "wifi_clients": 4.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 8616.0,
+    "memory_total_kb": 38424.0,
+    "cpu_usage_pct": 0.0,
+    "memory_usage_pct": 77.58
+  },
+  "6C5AB0-IGD-32190H8001935": {
+    "uptime_seconds": 762899.0,
+    "tx_power_dbm": 100.0,
+    "memory_free_kb": 31040.0,
+    "memory_total_kb": 58656.0,
+    "cpu_usage_pct": 32.0,
+    "memory_usage_pct": 47.08
+  }
+}
